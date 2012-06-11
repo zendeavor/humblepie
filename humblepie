@@ -1,101 +1,135 @@
 #!/usr/bin/env bash
 
-[[ -f PKGBUILD ]] || {
-  echo "This script requires the game's PKGBUILD to function."
-  echo "Please extract the tarball for the desired game and run this script again."
+OPTIND=1
+rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
+[[ -f "${rcfile}" ]] && . "${rcfile}"
+
+## options
+# -d [path]: directory where game should exist
+# -g [game]: which game to perform work on
+# -h: print usage
+# -k [key]: set HiB key
+# -t [path]: directory where torrent files should exist
+# -v: verbosity
+# need something for specifying system to determine which download to grab
+# also need to ask which version of the game to use; 32bit, 64bit, deb, tarball
+
+while getopts "d:g:hk:t:v?" opt; do
+  case "$opt" in
+    d) ## set the download/game dir
+      hibdir="${OPTARG}"
+      gamedir
+      ;;
+    g) ## do the game stuff; probably _checkgame && _dlgame
+      hibgame="${OPTARG}"
+      ;;
+    h|\?) ## print usage
+      ;;
+    k) ## set the key to use
+      hibkey="hib_${OPTARG}"
+      ;;
+    t) ## set the .torrent dir
+      hibtorr="${OPTARG}"
+      torrdir
+      ;;
+    v) ## turn on verbosity
+      ;;
+  esac
+done
+
+gamedir() {
+  [[ -w "${hibdir}" ]] || {
+    echo "Error: ${hibdir} does not exist or you do not have writable permissions!"
+    exit 1
+  }
 }
 
-. PKGBUILD
-_archive="source[0]%%:*"
-hibenv=('_humblebundle1key'
-        '_humblebundle2key'
-        '_humblebundle3key'
-        '_humblebundle4key' 
-        '_humblebundleVkey')
-hibvox=('_humblevoxatronkey')
-hibfb=('_humblebundlefrozenkey')
-hibfs=('_humblebundlesynapsekey')
-hibandroid=('_humblebundleandroidkey'
-            '_humblebundleandroid2key')
-
-[[ -f "${_humblebundledir}/${!_archive}" ]] && {
-  ln -sf "${_humblebundledir}/${!_archive}" .
-}
-
-_genkeyarray() {
-
-_checkkey
-}
-
-_checkkey() {
-  for keyvar in "${_keyarray[@]}"; do
-  _key="keyvar"
-  [[ -n "${!_key}" ]] && break
-  done
-  _checkgame
-}
-
-_checkgame() {
-  [[ -f "${!_archive}" ]] || {
-    local _prompt="Absolute path (omit trailing slashes): "
-    [[ -d "${_humblebundledir}" ]] && {
-    echo "Specify the path to the directory containing ${!_archive}"
-    echo -n "${_prompt}"
-    while read -er _dir; do
-      while [[ -f "${_dir}/${!_archive}" ]]; do
-        [[ $(md5sum "${_dir}/${!_archive}") == ${md5sum[0]} ]] {
-          ln -sf "${_dir}/${!_archive}" .
-          export _humblebundledir="${_dir}"
-      }
-      done
-    done
-    }
-
-    echo "Y to specify path to existing download, blank to specify your humble indie bundle key."
-    echo "Alternatively, place the download into ${_humblebundledir} and retry."
-    read -r _cont
-
-    case "${_cont}" in
-      [yY]) _dlgame
-        ;;
-      *) echo "Specify your humble indie bundle key."
-        echo -n "Humble Indie Bundle key: "
-        read -r _hib
-        [[ -n "${_hib}" ]] && _key="_hib"
-        ;;
-    esac
+torrdir() {
+  [[ -w "${hibtorr}" ]] || {
+    echo "Error: ${hibtorr} does not exist or you do not have writable permissions!"
+    exit 1
   }
 }
 
 _dlgame() {
-  _uri="$(curl -s http://www.humblebundle.com/downloads?key="${!_key}" \
-    | grep "${!_archive}")"
+  local uri
+  uri="$(curl -s http://www.humblebundle.com/downloads?key="${hibkey}" \
+    | grep "${hibgame}")"
   echo "  1. Torrent with aria2c"
   echo "  2. HTTP with curl"
 
   echo -n "Choose download method: "
-  read -a _method
-  case "${_method}" in
+  read -a method
+  case "${method}" in
     1)
       if [[ -x "$(type -p aria2c)" ]]; then
-        _uri="${_uri##*data-bt\=\'}"
-        _uri="${_uri%%\'*}" 
+        uri="${uri##*data-bt\=\'}"
+        uri="${uri%%\'*}" 
         echo "To resume this download later run:"
         echo "\`aria2c ${pkgname}.torrent\`"
         [[ ! -f "${pkgname}.torrent" ]] &&
-          curl -o "${pkgname}.torrent" "${_uri}"
+          curl -o "${pkgname}.torrent" "${uri}"
         aria2c "${pkgname}.torrent" --seed-time=0
       else
         echo "aria2c executable not found! Please install aria2."
       fi
     } ;;
   2)
-    _uri="${_uri##*data-web\=\'}"
-    _uri="${_uri%%\'*}" 
-    [[ -f "${!_archive}.part" ]] &&
-      curl -o "${!_archive}.part" "${_uri}"
-    mv "${!_archive}.part" "${!_archive}" ;;
+    uri="${uri##*data-web\=\'}"
+    uri="${uri%%\'*}" 
+    [[ -f "${hibgame}.part" ]] &&
+      curl -o "${hibgame}.part" "${uri}"
+    mv "${hibgame}.part" "${hibgame}" ;;
   *) echo "Please choose option 1 or 2." ;;
   esac
 }
+
+# [[ -f "${hibdir}/${hibgame}" ]] && {
+#   ln -sf "${hibdir}/${hibgame}" .
+# }
+
+# _genkeyarray() {
+
+# _checkkey
+# }
+
+# _checkkey() {
+#   for keyvar in "${hibkeyarray[@]}"; do
+#   hibkey="keyvar"
+#   [[ -n "${hibkey}" ]] && break
+#   done
+#   _checkgame
+# }
+
+# _checkgame() {
+  # [[ -f "${hibgame}" ]] || {
+  #   local prompt="Absolute path (omit trailing slashes): "
+  #   [[ -d "${hibdir}" ]] && {
+  #   echo "Specify the path to the directory containing ${hibgame}"
+  #   echo -n "${prompt}"
+  #   while read -er _dir; do
+  #     while [[ -f "${_dir}/${hibgame}" ]]; do
+  #       [[ $(md5sum "${_dir}/${hibgame}") == ${md5sum[0]} ]] {
+  #         ln -sf "${_dir}/${hibgame}" .
+  #         export hibdir="${_dir}"
+  #     }
+  #     done
+  #   done
+  #   }
+
+  #   echo "Y to specify path to existing download, blank to specify your humble indie bundle key."
+  #   echo "Alternatively, place the download into ${hibdir} and retry."
+  #   read -r cont
+
+  #   case "${cont}" in
+  #     [yY]) _dlgame
+  #       ;;
+  #     *) echo "Specify your humble indie bundle key."
+  #       echo -n "Humble Indie Bundle key: "
+  #       read -r _hib
+  #       [[ -n "${_hib}" ]] && hibkey="_hib"
+  #       ;;
+  #   esac
+  # }
+# }
 
