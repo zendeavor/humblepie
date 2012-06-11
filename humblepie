@@ -22,6 +22,7 @@ while getopts "d:g:hk:t:v?" opt; do
       ;;
     g) ## do the game stuff; probably _checkgame && _dlgame
       hibgame="${OPTARG}"
+      gamename
       ;;
     h|\?) ## print usage
       ;;
@@ -49,6 +50,57 @@ torrdir() {
     echo "Error: ${hibtorr} does not exist or you do not have writable permissions!"
     exit 1
   }
+}
+
+gamename() {
+  case "${OPTARG}" in
+    andyetitmoves|ayim) ## all of these games have shit naming conventions
+      ## andyetitmoves-1.2.2-1_x86_64.tar.gz
+      ;;
+    bittriprunner|btp) ## pfft
+      ## bit.trip.runner_amd64.tar.gz
+      ;;
+    braid) 
+      ## braid_1.0.0-0ubuntu2_amd64.deb
+      ;;
+    cavestoryplus|cavestory|csp|cs)
+      ## cavestoryplus-linux-1324519044.tar.gz
+      ;;
+    cogs) 
+      ## cogs_20110811_all.tar.gz
+      ;;
+    crayonphysicsdelux|crayonphysics|cpd)
+      ## crayon-physics-deluxe_55_i386.tar.gz
+      ;;
+    gratuitousspacebattles|gsb)
+      ## gsb1324679796.tar.gz
+      ;;
+    hammerfight|hf)
+      ## hammerfight_1.004_all.tar.gz
+      ;;
+    jamestown|jtown|jt)
+      ## jtownlinux_1_0_1_1324610248.zip
+      ;;
+    lonesurvivor|survivor|ls)
+      ## lonesurvivor-1.11d-amd64.tar.gz
+      ;;
+    nightskyhd|nightsky|nshd|ns)
+      ## nightskyhd-linux-1324519044.tar.gz
+      ;;
+    psychonauts)
+      ## psychonuts-linux-test-06032012.tar.bz2
+      ;;
+    shank)
+      ## shank-linux-120720110-1-bin
+      ;;
+    supermeatboy|meatboy|smb)
+      ## supermeatboy-linux-06072012-bin
+      ;;
+    vvvvvv)
+      ## VVVVVV_2.01_Linux.tar.gz
+      ;;
+    *) echo "Sorry, this game is not yet supported." ;;
+  esac
 }
 
 _dlgame() {
