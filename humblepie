@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+
+_archive="source[0]%%:*"
+#_humblebundletorrent=""
+[[ -f PKGBUILD ]] || {
+  echo "This script requires the game's PKGBUILD to function."
+  echo "Please extract the tarball for the desired game and run this script again."
+}
+. PKGBUILD
+for group in "${groups[@]}"; do
+  _key="_humblebundle${group:19}key"
+  [[ -n "${!_key}" ]] && break
+  # if [[  ]]
+  #   continue 
+  # else 
+  #   case foo in
+  #     "$_humblebundlefrozenkey")
+  #     "$_humblebundlesynapsekey")
+  #     "$_humblevoxatronkey")
+  #   esac
+  # fi
+done
+                      #|| -n "${!_key}" 
+[[ -f "${!_archive}" ]] || {
+  _path="Absolute path (omit trailing slashes): "
+  [[ -z "${_humblebundledir}" ]] && {
+  echo "Specify the path to the directory containing ${!_archive}"
+  echo -n "${_path}"
+  while read -r _dir; do
+  [[ -f "${_dir}/${!_archive}" ]] && {
+    ln -s "${_dir}/${!_archive}" .
+    continue
+    }
+  done
+  }
+
+  echo "_humblebundle4key or _humblebundleVkey should be exported in your environment!"
+  echo "Alternatively, place the download into ${_humblebundledir} and retry."
+  echo "Y to specify path to existing download, blank to specify your humble indie bundle key."
+  read -r _cont
+
+  case "${_cont}" in
+    [yY]) 
+      ;;
+    *) echo "Specify your humble indie bundle key."
+      echo -n "Humble Indie Bundle key: "
+      read -r _hib
+      [[ -n "${_hib}" ]] && _key="_hib"
+      ;;
+  esac
+}
+  [[ -f "${!_archive}" || -z "${!_key}" ]] || {
+  _uri="$(curl -s http://www.humblebundle.com/downloads?key="${!_key}" \
+    | grep "${!_archive}")"
+  echo "  1. Torrent with aria2c"
+  echo "  2. HTTP with curl"
+
+  echo -n "Choose download method: "
+  read -a _method
+  case "${_method}" in
+    1)
+      [[ -x "$(type -p aria2c)" ]] && {
+      _uri="${_uri##*data-bt\=\'}"
+      _uri="${_uri%%\'*}" 
+      echo "To resume this download later run:"
+      echo "\`aria2c ${pkgname}.torrent\`"
+      [[ ! -f "${pkgname}.torrent" ]] &&
+        curl -o "${pkgname}.torrent" "${_uri}"
+      aria2c "${pkgname}.torrent" --seed-time=0
+    } || {
+    error "aria2c executable not found! Please install aria2."
+    } ;;
+  2)
+    _uri="${_uri##*data-web\=\'}"
+    _uri="${_uri%%\'*}" 
+    [[ -f "${!_archive}.part" ]] &&
+      curl -o "${!_archive}.part" "${_uri}"
+    mv "${!_archive}.part" "${!_archive}" ;;
+  *) echo "Please choose option 1 or 2." ;;
+      esac
+      source[0]="${!_archive}::${_uri}"
+}
