@@ -4,7 +4,29 @@ OPTIND=1
 rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
 [[ -f "${rcfile}" ]] && . "${rcfile}"
 
+hibgames=( ["andyetitmoves"]="andyetitmoves" ["ayim"]="andyetitmoves"
+          ["bittriprunner"]="bit.trip.runner" ["btr"]="bit.trip.runner"
+          ["braid"]="braid"
+          ["cavestoryplus"]="cavestoryplus-linux"
+            ["cavestory"]="cavestoryplus-linux" ["csp"]="cavestoryplus-linux"
+          ["cogs"]="cogs"
+          ["crayonphysicsdeluxe"]="crayonphysicsdeluxe"
+            ["crayonphysics"]="crayonphysicsdeluxe"
+            ["cpd"]="crayonphysicsdeluxe"
+          ["gratuitousspacebattles"]="gratuitousspacebattles"
+            ["gsb"]="gratuitousspacebattles"
+          ["hammerfight"]="hammerfight" ["hf"]="hammerfight"
+          ["jamestown"]="jtownlinux" ["jtown"]="jtownlinux" ["jt"]="jtownlinux"
+          ["lonesurvivor"]="lonesurvivor" ["survivor"]="lonesurvivor"
+            ["ls"]="lonesurvivor"
+          ["nightskyhd"]="nightskyhd" ["nightsky"]="nightskyhd"
+            ["ns"]="nightskyhd"
+          ["psychonauts"]="psychonauts" ["pn"]="psychonauts"
+          ["shank"]="shank"
+          ["supermeatboy"]="supermeatboy" ["smb"]="supermeatboy"
+          ["vvvvvv"]="VVVVVV" ["v"]="VVVVVV" )
 ## options
+# -a [architecture]: i386, i686, amd64, x86_86, all, <empty>
 # -d [path]: directory where game should exist
 # -g [game]: which game to perform work on
 # -h: print usage
@@ -14,8 +36,13 @@ rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
 # need something for specifying system to determine which download to grab
 # also need to ask which version of the game to use; 32bit, 64bit, deb, tarball
 
-while getopts "d:g:hk:t:v?" opt; do
+while getopts "a:d:g:hk:t:v?" opt; do
   case "$opt" in
+    a) ## send to a function to set the right arch
+      ### there is no convention in the downloads so...
+      ### i have to depend on gamename to sanitize it
+      hibarch="${OPTARG}"
+      ;;
     d) ## set the download/game dir
       hibdir="${OPTARG}"
       gamedir
@@ -105,7 +132,7 @@ gamename() {
 
 _dlgame() {
   local uri
-  uri="$(curl -s http://www.humblebundle.com/downloads?key="${hibkey}" \
+  uri="$(curl -s http://www.humblebundle.com/downloads?key="${!hibkey}" \
     | grep "${hibgame}")"
   echo "  1. Torrent with aria2c"
   echo "  2. HTTP with curl"
