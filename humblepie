@@ -70,6 +70,7 @@ _dlgame() {
         [[ ! -f "${pkgname}.torrent" ]] &&
           curl -o "${pkgname}.torrent" "${uri}"
         aria2c "${pkgname}.torrent" --seed-time=0
+        mv "${pkgname}.torrent" "${hibtorr}"
       else
         echo "aria2c executable not found! Please install aria2."
       fi
