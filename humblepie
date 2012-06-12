@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
-
+###############################################################################
+### thanks to:
+### JavaAtom <faustian.merula@gmail.com>: filename generation for Introversion
+###
+###
+###############################################################################
 OPTIND=1
 rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
 [[ -f "${rcfile}" ]] && . "${rcfile}"
@@ -196,7 +201,7 @@ hibvoxatron=(
 # need something for specifying system to determine which download to grab
 # also need to ask which version of the game to use; 32bit, 64bit, deb, tarball
 
-while getopts "vh?a:d:g:k:t:" opt; do
+while getopts "vha:d:g:k:t:" opt; do
   case "$opt" in
     a) ## send to a function to set the right arch
       ### there is no convention in the downloads so...
@@ -211,16 +216,10 @@ while getopts "vh?a:d:g:k:t:" opt; do
       hibgame="${OPTARG}"
       gamever
       ;;
-    h|\?) ## print usage
+    h) ## print usage
       ;;
     k) ## set the key to use
-      hibkey="hib${OPTARG}key"
-      for value in "${!bundlekeys[@]}"; do
-        if [[ "${value}" == "${!hibkey}" ]]; then
-         ## need to verify this loop
-
-        fi
-      done
+      checkkey
       ;;
     t) ## set the .torrent dir
       hibtorr="${OPTARG}"
@@ -244,23 +243,34 @@ torrdir() {
     exit 1
   }
 }
+checkkey() {
+  local k
+  k="hib${OPTARG}key"
+  for v in "${!bundlekeys[@]}"; do
+    if [[ "${v}" == "${!k}" ]]; then
+      ## need to verify this loop
+      hibkey="$v"
+      ## go to bundle check function
+    fi
+  done
+}
 
-checkarray() {
-  case "${hibundle}" in
+checkbundle() {
+  case "${hibkey}" in
     ## set my important values to variables and kick to the downloader
-    hib1) ;;
-    hib2) ;;
-    hib3) ;;
-    hib4) ;;
-    hib5) ;;
-    hibandroid1) ;;
-    hibandroid2) ;;
-    hibbotanicula) ;;
-    hibfrozenbyte) ;;
-    hibfrozensynapse) ;;
-    hibintroversion) ;;
-    hibmojam) ;;
-    hibvoxatron) ;;
+    hib1key) ;;
+    hib2key) ;;
+    hib3key) ;;
+    hib4key) ;;
+    hib5key) ;;
+    hibandroid1key) ;;
+    hibandroid2key) ;;
+    hibbotaniculakey) ;;
+    hibfrozenbytekey) ;;
+    hibfrozensynapsekey) ;;
+    hibintroversionkey) ;;
+    hibmojamkey) ;;
+    hibvoxatronkey) ;;
   esac
 }
 
