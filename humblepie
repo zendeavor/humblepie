@@ -13,8 +13,9 @@ rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
 
 
 ## options
-# -a [architecture]: i386, i686, amd64, x86_64, all
+# -a [architecture]: 32, 64
 # -b [bundle]: which bundle to use
+# -c: checksum the game, optional
 # -d [path]: directory where game should exist
 # -g [game]: which game to perform work on
 # -h: print usage
@@ -23,15 +24,16 @@ rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
 # -t [path]: directory where torrent files should exist
 # -v: verbosity
 # need something for specifying system to determine which download to grab
-# also need to ask which version of the game to use; 32bit, 64bit, deb, tarball
+# allow systemwide installs as root
 
-while getopts "vha:d:g:ik:t:" opt; do
+while getopts "vha:cd:g:ik:t:" opt; do
   case "$opt" in
     a) ## send to a function to set the right arch
       ### there is no convention in the downloads so...
       ### i have to depend on gamename to sanitize it
       hibarch="${OPTARG}"
       ;;
+    c) checksum="y"
     d) ## set the download/game dir
       hibdir="${OPTARG}"
       gamedir
@@ -49,37 +51,10 @@ while getopts "vha:d:g:ik:t:" opt; do
       hibtorr="${OPTARG}"
       torrdir
       ;;
-    v) ## turn on verbosity
+    v) verbose="y"
       ;;
   esac
 done
-
-checkkey() {
-  local k
-  k="hib${hibundle}key"
-  for v in "${!bundlekeys[@]}"; do
-    if [[ "${v}" == "${!k}" ]]; then
-      hibkey="${v}"
-      checkbundle
-    else
-      error "${!k} was not found!"
-    fi
-  done
-}
-
-gamedir() {
-  [[ -w "${hibdir}" ]] || {
-    error "${hibdir} does not exist or you do not have writable permissions!"
-    exit 1
-  }
-}
-
-torrdir() {
-  [[ -w "${hibtorr}" ]] || {
-    error "${hibtorr} does not exist or you do not have writable permissions!"
-    exit 1
-  }
-}
 
 checkbundle() {
   case "${hibkey}" in
@@ -98,6 +73,44 @@ checkbundle() {
     hibmojamkey) hibmojam;;
     hibvoxatronkey) hibvoxatron;;
   esac
+}
+
+checkkey() {
+  local k
+  k="hib${hibundle}key"
+  for v in "${!bundlekeys[@]}"; do
+    if [[ "${v}" == "${!k}" ]]; then
+      hibkey="${v}"
+      checkbundle
+    else
+      error "${!k} was not found!"
+    fi
+  done
+}
+
+checkarch() {
+  [[ -z "${hibarch}" ]] && {
+  if [[ "$(uname -m)" =~ "i?86" ]]; then
+    hibarch="32"
+  else
+    hibarch="64"
+  fi
+}
+
+}
+
+gamedir() {
+  [[ -w "${hibdir}" ]] || {
+    error "${hibdir} does not exist or you do not have writable permissions!"
+    exit 1
+  }
+}
+
+torrdir() {
+  [[ -w "${hibtorr}" ]] || {
+    error "${hibtorr} does not exist or you do not have writable permissions!"
+    exit 1
+  }
 }
 
 warning() {

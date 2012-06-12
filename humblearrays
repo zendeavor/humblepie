@@ -1,4 +1,4 @@
-declare -a bundlekeys
+declare -ar bundlekeys
 
 bundlekeys=('hib1key' 
             'hib2key'
@@ -14,6 +14,10 @@ bundlekeys=('hib1key'
             'hibmojangkey'
             'hibvoxatronkey'
             )
+
+declare -ar architectures
+
+architectures=('32' '64')
 
 declare -Ar hib1 hib2 hib3 hib4 hib5
 declare -Ar hibandroid1 hibandroid2
