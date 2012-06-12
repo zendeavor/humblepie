@@ -110,4 +110,4 @@ error() {
   printf "==> $(gettext "ERROR:") ${mesg}\n" "$@" >&2
 }
 
-# vim: ft=sh sw=2 sts=2 et sta
+# vim: ft=sh sw=2 sts=2 et
