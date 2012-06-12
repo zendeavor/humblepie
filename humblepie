@@ -228,6 +228,7 @@ while getopts "vha:d:g:k:t:" opt; do
     h) ## print usage
       ;;
     k) ## set the key to use
+      hibundle="${OPTARG}"
       checkkey
       ;;
     t) ## set the .torrent dir
@@ -254,7 +255,7 @@ torrdir() {
 }
 checkkey() {
   local k
-  k="hib${OPTARG}key"
+  k="hib${hibundle}key"
   for v in "${!bundlekeys[@]}"; do
     if [[ "${v}" == "${!k}" ]]; then
       ## need to verify this loop
