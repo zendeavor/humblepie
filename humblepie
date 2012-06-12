@@ -4,13 +4,31 @@ OPTIND=1
 rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
 [[ -f "${rcfile}" ]] && . "${rcfile}"
 
+bundlekeys=('hib1key' 
+            'hib2key'
+            'hib3key'
+            'hib4key'
+            'hib5key'
+            'hibandroid1key'
+            'hibandroid2key'
+            'hibbotaniculakey'
+            'hibfrozenbyekey'
+            'hibfrozensynapsekey'
+            'hibintroversionkey'
+            'hibmojangkey'
+            'hibvoxatronkey'
+            )
+
 hib1=( 
       ["aquaria"]="aquaria"
       ["gish"]="gish"
       ["lugaruhd"]="lugaruhd"
       ["lugaru"]="lugaruhd"
+      ["lhd"]="lugaruhd"
       ["penumbra"]="penumbraoverture"
+      ["po"]="penumbraoverture"
       ["samorost2"]="samorost2"
+      ["s2"]="samorost2"
       ["worldofgoo"]="worldofgoo" 
       ["wog"]="worldofgoo"
       )
@@ -74,70 +92,6 @@ hib5=(
       ["s&s"]="swordandsworcery"
       ["sas"]="swordandsworcery"
       )
-hibfrozenbyte=( 
-              ["jackclawbeta"]="claw" 
-              ["jackclaw"]="claw"
-              ["jcb"]="claw" 
-              ["jc"]="claw"
-              ["shadowgrounds"]="shadowgrounds" 
-              ["sg"]="shadowgrounds"
-              ["shadowgroundssurvivor"]="survivor" 
-              ["sgs"]="surivor"
-              ["splot"]="splot"
-              ["trine"]="Trine" 
-              )
-hibfrozensynapse=( 
-                  ["frozensynapse"]="frozensynapse" 
-                  ["fs"]="frozensynapse"
-                  ["spacechem"]="spacechem" 
-                  ["sc"]="spacechem"
-                  ["trauma"]="tramua"
-                  )
-hibvoxatron=( 
-            ["blocksthatmatter"]="blocksthatmatter" 
-            ["btm"]="blocksthatmatter"
-            ["chocolatecastle"]="chocolatecastle" 
-            ["cc"]="chocolatecastle"
-            ["gish"]="gish"
-            ["jaspersjourneys"]="jaspersjourneys" 
-            ["jj"]="jaspersjourneys"
-            ["thebindingofisaac"]="thebindingofisaac"
-            ["tboc"]="thebindingofisaac" 
-            ["voxatron"]="voxatron" 
-            ["vox"]="voxatron"
-            ["zenpuzzlegarden"]="zenpuzzlegarden" 
-            ["zpg"]="zenpuzzlegarden"
-            )
-hibintroversion=( 
-                ["aquaria"]="aquaria"
-                ["crayonphysicsdeluxe"]="crayonphysicsdeluxe"
-                ["crayonphysics"]="crayonphysicsdeluxe"
-                ["cpd"]="crayonphysicsdeluxe"
-                ["darwinia"]="darwinia" 
-                ["dw"]="darwinia"
-                ["defcon"]="defcon"
-                ["dugeonsofdredmoor"]="dugeonsofdredmoor"
-                ["dod"]="dungeonsofdredmoor"
-                ["multiwinia"]="multiwinia" 
-                ["mw"]="multiwinia"
-                ["uplink"]="uplink" 
-                ["ul"]="uplink"
-                )
-hibmojam=( 
-          ["catacombsnatch"]="catacombsnatch" 
-          ["cs"]="catacombsnatch"
-          ["fistsofresistance"]="fistsofresistance" 
-          ["for"]="fistsofresistance"
-          ["thebroadsideexpress"]="thebroadsideexpress"
-          ["tbse"]="thebroadsideexpress"
-          )
-hibbotanicula=( 
-              ["botanicula"]="botanicula"
-              ["machinarium"]="machinarium"
-              ["samorost2"]="samorost2" 
-              ["samorost"]="samorost2"
-              ["s2"]="samorost2" 
-              )
 hibandroid1=( 
             ["anomalywarzoneearth"]="anomalywarzoneearth" 
             ["anomaly"]="anomalywarzoneearth"
@@ -165,9 +119,74 @@ hibandroid2=(
             ["zb2"]="zenbound2" 
             ["zb"]="zenbound2" 
             )
+hibbotanicula=( 
+              ["botanicula"]="botanicula"
+              ["machinarium"]="machinarium"
+              ["samorost2"]="samorost2" 
+              ["samorost"]="samorost2"
+              ["s2"]="samorost2" 
+              )
+hibfrozenbyte=( 
+              ["jackclawbeta"]="claw" 
+              ["jackclaw"]="claw"
+              ["jcb"]="claw" 
+              ["jc"]="claw"
+              ["shadowgrounds"]="shadowgrounds" 
+              ["sg"]="shadowgrounds"
+              ["shadowgroundssurvivor"]="survivor" 
+              ["sgs"]="surivor"
+              ["splot"]="splot"
+              ["trine"]="Trine" 
+              )
+hibfrozensynapse=( 
+                  ["frozensynapse"]="frozensynapse" 
+                  ["fs"]="frozensynapse"
+                  ["spacechem"]="spacechem" 
+                  ["sc"]="spacechem"
+                  ["trauma"]="tramua"
+                  )
+hibintroversion=( 
+                ["aquaria"]="aquaria"
+                ["crayonphysicsdeluxe"]="crayonphysicsdeluxe"
+                ["crayonphysics"]="crayonphysicsdeluxe"
+                ["cpd"]="crayonphysicsdeluxe"
+                ["darwinia"]="darwinia" 
+                ["dw"]="darwinia"
+                ["defcon"]="defcon"
+                ["dugeonsofdredmoor"]="dugeonsofdredmoor"
+                ["dod"]="dungeonsofdredmoor"
+                ["multiwinia"]="multiwinia" 
+                ["mw"]="multiwinia"
+                ["uplink"]="uplink" 
+                ["ul"]="uplink"
+                )
+hibmojam=( 
+          ["catacombsnatch"]="catacombsnatch" 
+          ["cs"]="catacombsnatch"
+          ["fistsofresistance"]="fistsofresistance" 
+          ["for"]="fistsofresistance"
+          ["thebroadsideexpress"]="thebroadsideexpress"
+          ["tbse"]="thebroadsideexpress"
+          )
+hibvoxatron=( 
+            ["blocksthatmatter"]="blocksthatmatter" 
+            ["btm"]="blocksthatmatter"
+            ["chocolatecastle"]="chocolatecastle" 
+            ["cc"]="chocolatecastle"
+            ["gish"]="gish"
+            ["jaspersjourneys"]="jaspersjourneys" 
+            ["jj"]="jaspersjourneys"
+            ["thebindingofisaac"]="thebindingofisaac"
+            ["tboc"]="thebindingofisaac" 
+            ["voxatron"]="voxatron" 
+            ["vox"]="voxatron"
+            ["zenpuzzlegarden"]="zenpuzzlegarden" 
+            ["zpg"]="zenpuzzlegarden"
+            )
 
 ## options
 # -a [architecture]: i386, i686, amd64, x86_86, all
+# -b [bundle]: which bundle to use
 # -d [path]: directory where game should exist
 # -g [game]: which game to perform work on
 # -h: print usage
@@ -184,6 +203,8 @@ while getopts "vh?a:d:g:k:t:" opt; do
       ### i have to depend on gamename to sanitize it
       hibarch="${OPTARG}"
       ;;
+    b) ## send to the function that knows the bundle arrays
+      hibundle="${OPTARG}"
     d) ## set the download/game dir
       hibdir="${OPTARG}"
       gamedir
@@ -196,6 +217,11 @@ while getopts "vh?a:d:g:k:t:" opt; do
       ;;
     k) ## set the key to use
       hibkey="hib_${OPTARG}"
+      for value in "${!bundlekeys[@]}"; do
+        if [[ "${value}" == "${hibkey}" ]]; then
+         ## need to verify this loop
+        fi
+      done
       ;;
     t) ## set the .torrent dir
       hibtorr="${OPTARG}"
@@ -218,6 +244,25 @@ torrdir() {
     echo "Error: ${hibtorr} does not exist or you do not have writable permissions!"
     exit 1
   }
+}
+
+checkarray() {
+  case "${hibundle}" in
+    ## set my important values to variables and kick to the downloader
+    hib1) ;;
+    hib2) ;;
+    hib3) ;;
+    hib4) ;;
+    hib5) ;;
+    hibandroid1) ;;
+    hibandroid2) ;;
+    hibbotanicula) ;;
+    hibfrozenbyte) ;;
+    hibfrozensynapse) ;;
+    hibintroversion) ;;
+    hibmojam) ;;
+    hibvoxatron) ;;
+  esac
 }
 
 gamever() {
