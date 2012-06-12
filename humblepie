@@ -12,7 +12,8 @@ hib1=(
       ["penumbra"]="penumbraoverture"
       ["samorost2"]="samorost2"
       ["worldofgoo"]="worldofgoo" 
-      ["wog"]="worldofgoo" )
+      ["wog"]="worldofgoo"
+      )
 hib2=( 
       ["braid"]="braid"
       ["cortexcommand"]="cortexcommand" 
@@ -20,7 +21,8 @@ hib2=(
       ["osmos"]="osmos"
       ["machinarium"]="machinarium"
       ["revengeofthetitans"]="revengeofthetitans" 
-      ["rott"]="revengeofthetitans" )
+      ["rott"]="revengeofthetitans"
+      )
 hib3=( 
       ["andyetitmoves"]="andyetitmoves" 
       ["ayim"]="andyetitmoves"
@@ -36,7 +38,8 @@ hib3=(
       ["steelstorm"]="steelstormretribution" 
       ["ssr"]="steelstormretribution"
       ["ss"]="steelstormretribution"
-      ["vvvvvv"]="VVVVVV" ["v"]="VVVVVV" )
+      ["vvvvvv"]="VVVVVV" ["v"]="VVVVVV"
+      )
 hib4=( 
       ["bittriprunner"]="bit.trip.runner" 
       ["btr"]="bit.trip.runner"
@@ -52,7 +55,8 @@ hib4=(
       ["ns"]="nightskyhd"
       ["shank"]="shank"
       ["supermeatboy"]="supermeatboy" 
-      ["smb"]="supermeatboy" )
+      ["smb"]="supermeatboy"
+      )
 hib5=( 
       ["amnesiatdd"]="amnesiatdd" 
       ["amnesia"]="amnesiatdd" 
@@ -68,7 +72,8 @@ hib5=(
       ["smb"]="supermeatboy"
       ["swordandsworcery"]="swordandsworcery" 
       ["s&s"]="swordandsworcery"
-      ["sas"]="swordandsworcery" )
+      ["sas"]="swordandsworcery"
+      )
 hibfrozenbyte=( 
               ["jackclawbeta"]="claw" 
               ["jackclaw"]="claw"
@@ -79,13 +84,15 @@ hibfrozenbyte=(
               ["shadowgroundssurvivor"]="survivor" 
               ["sgs"]="surivor"
               ["splot"]="splot"
-              ["trine"]="Trine" )          
+              ["trine"]="Trine" 
+              )
 hibfrozensynapse=( 
                   ["frozensynapse"]="frozensynapse" 
                   ["fs"]="frozensynapse"
                   ["spacechem"]="spacechem" 
                   ["sc"]="spacechem"
-                  ["trauma"]="tramua" )
+                  ["trauma"]="tramua"
+                  )
 hibvoxatron=( 
             ["blocksthatmatter"]="blocksthatmatter" 
             ["btm"]="blocksthatmatter"
@@ -99,7 +106,8 @@ hibvoxatron=(
             ["voxatron"]="voxatron" 
             ["vox"]="voxatron"
             ["zenpuzzlegarden"]="zenpuzzlegarden" 
-            ["zpg"]="zenpuzzlegarden" )
+            ["zpg"]="zenpuzzlegarden"
+            )
 hibintroversion=( 
                 ["aquaria"]="aquaria"
                 ["crayonphysicsdeluxe"]="crayonphysicsdeluxe"
@@ -111,20 +119,23 @@ hibintroversion=(
                 ["multiwinia"]="multiwinia" 
                 ["mw"]="multiwinia"
                 ["uplink"]="uplink" 
-                ["ul"]="uplink")
+                ["ul"]="uplink"
+                )
 hibmojam=( 
           ["catacombsnatch"]="catacombsnatch" 
           ["cs"]="catacombsnatch"
           ["fistsofresistance"]="fistsofresistance" 
           ["for"]="fistsofresistance"
           ["thebroadsideexpress"]="thebroadsideexpress"
-          ["tbse"]="thebroadsideexpress" )
+          ["tbse"]="thebroadsideexpress"
+          )
 hibbotanicula=( 
               ["botanicula"]="botanicula"
               ["machinarium"]="machinarium"
               ["samorost2"]="samorost2" 
               ["samorost"]="samorost2"
-              ["s2"]="samorost2" )
+              ["s2"]="samorost2" 
+              )
 hibandroid1=( 
             ["anomalywarzoneearth"]="anomalywarzoneearth" 
             ["anomaly"]="anomalywarzoneearth"
@@ -134,7 +145,8 @@ hibandroid1=(
             ["toki"]="tokitori" 
             ["tt"]="tokitori"
             ["worldofgoo"]="worldofgoo" 
-            ["wog"]="worldofgoo" )
+            ["wog"]="worldofgoo" 
+            )
 hibandroid2=( 
             ["avadontheblackfortress"]="avadontheblackfortress"
             ["avadon"]="avadontheblackfortress"
@@ -149,7 +161,8 @@ hibandroid2=(
             ["zenbound2"]="zenbound2" 
             ["zenbound"]="zenbound2"
             ["zb2"]="zenbound2" 
-            ["zb"]="zenbound2" )
+            ["zb"]="zenbound2" 
+            )
 
 ## options
 # -a [architecture]: i386, i686, amd64, x86_86, all
