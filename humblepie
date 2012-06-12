@@ -4,34 +4,97 @@ OPTIND=1
 rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
 [[ -f "${rcfile}" ]] && . "${rcfile}"
 
-hibgames=( ["andyetitmoves"]="andyetitmoves" ["ayim"]="andyetitmoves"
-          ["bittriprunner"]="bit.trip.runner" ["btr"]="bit.trip.runner"
-          ["braid"]="braid"
-          ["cavestoryplus"]="cavestoryplus" ["cavestory"]="cavestoryplus"
-            ["csp"]="cavestoryplus"
-          ["cogs"]="cogs"
-          ["crayonphysicsdeluxe"]="crayonphysicsdeluxe"
-            ["crayonphysics"]="crayonphysicsdeluxe"
-            ["cpd"]="crayonphysicsdeluxe"
-          ["gratuitousspacebattles"]="gratuitousspacebattles"
-            ["gsb"]="gratuitousspacebattles"
-          ["hammerfight"]="hammerfight" ["hf"]="hammerfight"
-          ["jackclawbeta"]="claw" ["jackclaw"]="claw"
-            ["jcb"]="claw" ["jc"]="claw"
-          ["jamestown"]="jtownlinux" ["jtown"]="jtownlinux" ["jt"]="jtownlinux"
-          ["lonesurvivor"]="lonesurvivor" ["survivor"]="lonesurvivor"
-            ["ls"]="lonesurvivor"
-          ["nightskyhd"]="nightskyhd" ["nightsky"]="nightskyhd"
-            ["ns"]="nightskyhd"
-          ["psychonauts"]="psychonauts" ["pn"]="psychonauts"
-          ["shank"]="shank"
-          ["shadowgrounds"]="shadowgrounds" ["sg"]="shadowgrounds"
-          ["shadowgroundssurvivor"]="survivor" ["sgs"]="surivor"
-          ["supermeatboy"]="supermeatboy" ["smb"]="supermeatboy"
-          ["trine"]="Trine"
-          ["vvvvvv"]="VVVVVV" ["v"]="VVVVVV" )
+hib1=( ["aquaria"]="aquaria"
+      ["gish"]="gish"
+      ["lugaruhd"]="lugaruhd" ["lugaru"]="lugaruhd"
+      ["penumbra"]="penumbraoverture"
+      ["samorost2"]="samorost2"
+      ["worldofgoo"]="worldofgoo" ["wog"]="worldofgoo" )
+hib2=( ["braid"]="braid"
+      ["cortexcommand"]="cortexcommand" ["cc"]="cortexcommand"
+      ["osmos"]="osmos"
+      ["machinarium"]="machinarium"
+      ["revengeofthetitans"]="revengeofthetitans" 
+        ["rott"]="revengeofthetitans" )
+hib3=( ["andyetitmoves"]="andyetitmoves" ["ayim"]="andyetitmoves"
+      ["atomzombiesmasher"]="atomzombiesmasher" ["azs"]="atomzombiesmasher"
+      ["cogs"]="cogs"
+      ["crayonphysicsdeluxe"]="crayonphysicsdeluxe"
+        ["crayonphysics"]="crayonphysicsdeluxe"
+        ["cpd"]="crayonphysicsdeluxe"
+      ["hammerfight"]="hammerfight" ["hf"]="hammerfight"
+      ["vvvvvv"]="VVVVVV" ["v"]="VVVVVV" )
+hib4=( ["bittriprunner"]="bit.trip.runner" ["btr"]="bit.trip.runner"
+      ["cavestoryplus"]="cavestoryplus" ["cavestory"]="cavestoryplus"
+        ["csp"]="cavestoryplus"
+      ["jamestown"]="jtownlinux" ["jtown"]="jtownlinux" ["jt"]="jtownlinux"
+      ["nightskyhd"]="nightskyhd" ["nightsky"]="nightskyhd"
+        ["nshd"]="nightskyhd" ["ns"]="nightskyhd"
+      ["shank"]="shank"
+      ["supermeatboy"]="supermeatboy" ["smb"]="supermeatboy" )
+hib5=( ["amnesiatdd"]="amnesiatdd" ["amnesia"]="amnesiatdd" 
+      ["bastion"]="bastion"
+      ["braid"]="braid"
+      ["limbo"]="limbo"
+      ["lonesurvivor"]="lonesurvivor" ["survivor"]="lonesurvivor"
+        ["ls"]="lonesurvivor"
+      ["psychonauts"]="psychonauts" ["pn"]="psychonauts"
+      ["supermeatboy"]="supermeatboy" ["smb"]="supermeatboy"
+      ["swordandsworcery"]="swordandsworcery" ["s&s"]="swordandsworcery"
+        ["sas"]="swordandsworcery" )
+hibfrozenbyte=( ["jackclawbeta"]="claw" ["jackclaw"]="claw"
+              ["jcb"]="claw" ["jc"]="claw"
+              ["shadowgrounds"]="shadowgrounds" ["sg"]="shadowgrounds"
+              ["shadowgroundssurvivor"]="survivor" ["sgs"]="surivor"
+              ["trine"]="Trine" )          
+hibfrozensynapse=( ["frozensynapse"]="frozensynapse" ["fs"]="frozensynapse"
+                  ["spacechem"]="spacechem" ["sc"]="spacechem"
+                  ["trauma"]="tramua" )
+hibvoxatron=( ["blocksthatmatter"]="blocksthatmatter" 
+                ["btm"]="blocksthatmatter"
+            ["chocolatecastle"]="chocolatecastle" ["cc"]="chocolatecastle"
+            ["gish"]="gish"
+            ["jaspersjourneys"]="jaspersjourneys" ["jj"]="jaspersjourneys"
+            ["thebindingofisaac"]="thebindingofisaac"
+              ["tboc"]="thebindingofisaac" 
+            ["voxatron"]="voxatron" ["vox"]="voxatron"
+            ["zenpuzzlegarden"]="zenpuzzlegarden" ["zpg"]="zenpuzzlegarden" )
+hibintroversion=( ["aquaria"]="aquaria"
+                ["crayonphysicsdeluxe"]="crayonphysicsdeluxe"
+                  ["crayonphysics"]="crayonphysicsdeluxe"
+                  ["cpd"]="crayonphysicsdeluxe"
+                ["darwinia"]="darwinia" ["dw"]="darwinia"
+                ["defcon"]="defcon"
+                ["multiwinia"]="multiwinia" ["mw"]="multiwinia"
+                ["uplink"]="uplink" ["ul"]="uplink")
+hibmojam=( ["catacombsnatch"]="catacombsnatch" ["cs"]="catacombsnatch"
+          ["fistsofresistance"]="fistsofresistance" 
+            ["for"]="fistsofresistance"
+          ["thebroadsideexpress"]="thebroadsideexpress"
+            ["tbse"]="thebroadsideexpress" )
+hibbotanicula=( ["botanicula"]="botanicula"
+              ["machinarium"]="machinarium"
+              ["samorost2"]="samorost2" ["samorost"]="samorost2"
+                ["s2"]="samorost2" )
+hibandroid1=( ["anomalywarzoneearth"]="anomalywarzoneearth" 
+              ["anomaly"]="anomalywarzoneearth"
+            ["edge"]="edge"
+            ["osmos"]="osmos"
+            ["tokitori"]="tokitori" ["toki"]="tokitori" ["tt"]="tokitori"
+            ["worldofgoo"]="worldofgoo" ["wog"]="worldofgoo" )
+hibandroid2=( ["avadontheblackfortress"]="avadontheblackfortress"
+              ["avadon"]="avadontheblackfortress"
+              ["atbf"]="avadontheblackfortress"
+            ["canabalt"]="canabalt"
+            ["cogs"]="cogs"
+            ["snuggletruck"]="snuggletruck" ["st"]="snuggletruck"
+            ["swordsandsoldiers"]="swordsandsoldiers"
+              ["s&s"]="swordsandsoldiers" ["sas"]="swordsandsoldiers"
+            ["zenbound2"]="zenbound2" ["zenbound"]="zenbound2"
+              ["zb2"]="zenbound2" ["zb"]="zenbound2" )
+
 ## options
-# -a [architecture]: i386, i686, amd64, x86_86, all, <empty>
+# -a [architecture]: i386, i686, amd64, x86_86, all
 # -d [path]: directory where game should exist
 # -g [game]: which game to perform work on
 # -h: print usage
@@ -41,7 +104,7 @@ hibgames=( ["andyetitmoves"]="andyetitmoves" ["ayim"]="andyetitmoves"
 # need something for specifying system to determine which download to grab
 # also need to ask which version of the game to use; 32bit, 64bit, deb, tarball
 
-while getopts "a:d:g:hk:t:v?" opt; do
+while getopts "vh?a:d:g:k:t:" opt; do
   case "$opt" in
     a) ## send to a function to set the right arch
       ### there is no convention in the downloads so...
@@ -54,7 +117,7 @@ while getopts "a:d:g:hk:t:v?" opt; do
       ;;
     g) ## do the game stuff; probably _checkgame && _dlgame
       hibgame="${OPTARG}"
-      gamename
+      gamever
       ;;
     h|\?) ## print usage
       ;;
@@ -84,61 +147,104 @@ torrdir() {
   }
 }
 
-gamename() {
+gamever() {
   for _key in "${hibgames[@]}"; do
     case "${_key}" in
       andyetitmoves) ## all of these games have shit naming conventions
         ## andyetitmoves-1.2.2-1_x86_64.tar.gz
+        ver="1.2.2-1"
+        break
         ;;
       bittriprunner) ## pfft
         ## bit.trip.runner_amd64.tar.gz
+        break
         ;;
       braid) 
         ## braid_1.0.0-0ubuntu2_amd64.deb
+        ver="1.0.0-0"
+        break
         ;;
       cavestoryplus)
         ## cavestoryplus-linux-1324519044.tar.gz
+        ver="1324519044"
+        platform="linux"
+        break
         ;;
       claw)
         ## clawBeta3.zip
+        ver="Beta3"
+        break
         ;;
       cogs) 
         ## cogs_20110811_all.tar.gz
+        ver="20110811"
+        break
         ;;
       crayonphysicsdelux)
         ## crayon-physics-deluxe_55_i386.tar.gz
+        ver="55"
+        break
         ;;
       gratuitousspacebattles)
         ## gsb1324679796.tar.gz
+        ver="1324679796"
+        break
         ;;
       hammerfight)
         ## hammerfight_1.004_all.tar.gz
+        ver="1.004"
+        break
         ;;
       jamestown)
         ## jtownlinux_1_0_1_1324610248.zip
+        ver="1_0_1_1324610248"
+        break
         ;;
       lonesurvivor)
         ## lonesurvivor-1.11d-amd64.tar.gz
+        ver="1.11d"
+        break
         ;;
       nightskyhd)
         ## nightskyhd-linux-1324519044.tar.gz
-        ;;
+        ver="1324519044"
+        platform="linux"
+        break
+        ;;                   
       psychonauts)
         ## psychonuts-linux-test-06032012.tar.bz2
+        ver="06032012"
+        platform="linux"
+        break
         ;;
       shadowgrounds)
         ## shadowgroundsUpdate1.run
+        ver="Update1"
+        break
         ;;
       shank)
         ## shank-linux-120720110-1-bin
+        ver="120720110-1"
+        break
         ;;
       supermeatboy)
         ## supermeatboy-linux-06072012-bin
+        ver="06072012"
+        platform="linux"
+        break
+        ;;
+      survivor)
+        ## survivorUpdate1.run
+        ver="Update1"
+        break
         ;;
       VVVVVV)
         ## VVVVVV_2.01_Linux.tar.gz
+        ver="2.01"
+        platform="Linux"
+        break
         ;;
-      *) echo "Sorry, this game is not yet supported." ;;
+      *) echo "Sorry, ${_key} is not yet supported." ;;
     esac
   done
 }
