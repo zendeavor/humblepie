@@ -240,31 +240,31 @@ while getopts "vha:d:g:k:t:" opt; do
   esac
 done
 
+checkkey() {
+  local k
+  k="hib${hibundle}key"
+  for v in "${!bundlekeys[@]}"; do
+    if [[ "${v}" == "${!k}" ]]; then
+      hibkey="${v}"
+      checkbundle
+    else
+      error "${!k} was not found!"
+    fi
+  done
+}
+
 gamedir() {
   [[ -w "${hibdir}" ]] || {
-    echo "Error: ${hibdir} does not exist or you do not have writable permissions!"
+    error "${hibdir} does not exist or you do not have writable permissions!"
     exit 1
   }
 }
 
 torrdir() {
   [[ -w "${hibtorr}" ]] || {
-    echo "Error: ${hibtorr} does not exist or you do not have writable permissions!"
+    error "${hibtorr} does not exist or you do not have writable permissions!"
     exit 1
   }
-}
-checkkey() {
-  local k
-  k="hib${hibundle}key"
-  for v in "${!bundlekeys[@]}"; do
-    if [[ "${v}" == "${!k}" ]]; then
-      ## need to verify this loop
-      hibkey="${v}"
-      checkbundle
-    else
-      echo "${k} was not found!"
-    fi
-  done
 }
 
 checkbundle() {
@@ -286,188 +286,12 @@ checkbundle() {
   esac
 }
 
-_dlgame() {
-  local uri
-  uri="$(curl -s http://www.humblebundle.com/downloads?key="${!hibkey}" \
-    | grep "${hibgame}")"
-  echo "  1. Torrent with aria2c"
-  echo "  2. HTTP with curl"
-
-  echo -n "Choose download method: "
-  read -a method
-  case "${method}" in
-    1)
-      if [[ -x "$(type -p aria2c)" ]]; then
-        uri="${uri##*data-bt\=\'}"
-        uri="${uri%%\'*}" 
-        echo "To resume this download later run:"
-        echo "\`aria2c ${pkg}.torrent\`"
-        [[ ! -f "${pkg}.torrent" ]] &&
-          curl -o "${pkg}.torrent" "${uri}"
-        aria2c "${pkg}.torrent" --seed-time=0
-        mv "${pkg}.torrent" "${hibtorr}"
-      else
-        echo "aria2c executable not found! Please install aria2."
-      fi
-    } ;;
-  2)
-    uri="${uri##*data-web\=\'}"
-    uri="${uri%%\'*}" 
-    [[ -f "${hibgame}.part" ]] &&
-      curl -o "${hibgame}.part" "${uri}"
-    mv "${hibgame}.part" "${hibgame}" ;;
-  *) echo "Please choose option 1 or 2." ;;
-  esac
+warning() {
+  local mesg="${1}"; shift
+  printf "==> $(gettext "WARNING:") ${mesg}\n" "$@" >&2
 }
 
-# gamever() {
-#   for _key in "${hibgames[@]}"; do
-#     case "${_key}" in
-#       ## all of these games have shit naming conventions
-#       andyetitmoves)
-#         ## andyetitmoves-1.2.2-1_x86_64.tar.gz
-#         ver="1.2.2-1"
-#         break
-#         ;;
-#       bittriprunner) ## pfft
-#         ## bit.trip.runner_amd64.tar.gz
-#         break
-#         ;;
-#       braid) 
-#         ## braid_1.0.0-0ubuntu2_amd64.deb
-#         ver="1.0.0-0"
-#         break
-#         ;;
-#       cavestoryplus)
-#         ## cavestoryplus-linux-1324519044.tar.gz
-#         ver="1324519044"
-#         platform="linux"
-#         break
-#         ;;
-#       claw)
-#         ## clawBeta3.zip
-#         ver="Beta3"
-#         break
-#         ;;
-#       cogs) 
-#         ## cogs_20110811_all.tar.gz
-#         ver="20110811"
-#         break
-#         ;;
-#       crayonphysicsdelux)
-#         ## crayon-physics-deluxe_55_i386.tar.gz
-#         ver="55"
-#         break
-#         ;;
-#       gratuitousspacebattles)
-#         ## gsb1324679796.tar.gz
-#         ver="1324679796"
-#         break
-#         ;;
-#       hammerfight)
-#         ## hammerfight_1.004_all.tar.gz
-#         ver="1.004"
-#         break
-#         ;;
-#       jamestown)
-#         ## jtownlinux_1_0_1_1324610248.zip
-#         ver="1_0_1_1324610248"
-#         break
-#         ;;
-#       lonesurvivor)
-#         ## lonesurvivor-1.11d-amd64.tar.gz
-#         ver="1.11d"
-#         break
-#         ;;
-#       nightskyhd)
-#         ## nightskyhd-linux-1324519044.tar.gz
-#         ver="1324519044"
-#         platform="linux"
-#         break
-#         ;;                   
-#       psychonauts)
-#         ## psychonuts-linux-test-06032012.tar.bz2
-#         ver="06032012"
-#         platform="linux"
-#         break
-#         ;;
-#       shadowgrounds)
-#         ## shadowgroundsUpdate1.run
-#         ver="Update1"
-#         break
-#         ;;
-#       shank)
-#         ## shank-linux-120720110-1-bin
-#         ver="120720110-1"
-#         break
-#         ;;
-#       supermeatboy)
-#         ## supermeatboy-linux-06072012-bin
-#         ver="06072012"
-#         platform="linux"
-#         break
-#         ;;
-#       survivor)
-#         ## survivorUpdate1.run
-#         ver="Update1"
-#         break
-#         ;;
-#       VVVVVV)
-#         ## VVVVVV_2.01_Linux.tar.gz
-#         ver="2.01"
-#         platform="Linux"
-#         break
-#         ;;
-#       *) echo "Sorry, ${_key} is not yet supported." ;;
-#     esac
-#   done
-# }
-# [[ -f "${hibdir}/${hibgame}" ]] && {
-#   ln -sf "${hibdir}/${hibgame}" .
-# }
-
-# _genkeyarray() {
-
-# _checkkey
-# }
-
-# _checkkey() {
-#   for keyvar in "${hibkeyarray[@]}"; do
-#   hibkey="keyvar"
-#   [[ -n "${hibkey}" ]] && break
-#   done
-#   _checkgame
-# }
-
-# _checkgame() {
-  # [[ -f "${hibgame}" ]] || {
-  #   local prompt="Absolute path (omit trailing slashes): "
-  #   [[ -d "${hibdir}" ]] && {
-  #   echo "Specify the path to the directory containing ${hibgame}"
-  #   echo -n "${prompt}"
-  #   while read -er _dir; do
-  #     while [[ -f "${_dir}/${hibgame}" ]]; do
-  #       [[ $(md5sum "${_dir}/${hibgame}") == ${md5sum[0]} ]] {
-  #         ln -sf "${_dir}/${hibgame}" .
-  #         export hibdir="${_dir}"
-  #     }
-  #     done
-  #   done
-  #   }
-
-  #   echo "Y to specify path to existing download, blank to specify your humble indie bundle key."
-  #   echo "Alternatively, place the download into ${hibdir} and retry."
-  #   read -r cont
-
-  #   case "${cont}" in
-  #     [yY]) _dlgame
-  #       ;;
-  #     *) echo "Specify your humble indie bundle key."
-  #       echo -n "Humble Indie Bundle key: "
-  #       read -r _hib
-  #       [[ -n "${_hib}" ]] && hibkey="_hib"
-  #       ;;
-  #   esac
-  # }
-# }
-
+error() {
+  local mesg="${1}"; shift
+  printf "==> $(gettext "ERROR:") ${mesg}\n" "$@" >&2
+}
