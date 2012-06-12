@@ -12,7 +12,7 @@ bundlekeys=('hib1key'
             'hibandroid1key'
             'hibandroid2key'
             'hibbotaniculakey'
-            'hibfrozenbyekey'
+            'hibfrozenbytekey'
             'hibfrozensynapsekey'
             'hibintroversionkey'
             'hibmojangkey'
@@ -203,8 +203,6 @@ while getopts "vh?a:d:g:k:t:" opt; do
       ### i have to depend on gamename to sanitize it
       hibarch="${OPTARG}"
       ;;
-    b) ## send to the function that knows the bundle arrays
-      hibundle="${OPTARG}"
     d) ## set the download/game dir
       hibdir="${OPTARG}"
       gamedir
@@ -216,10 +214,11 @@ while getopts "vh?a:d:g:k:t:" opt; do
     h|\?) ## print usage
       ;;
     k) ## set the key to use
-      hibkey="hib_${OPTARG}"
+      hibkey="hib${OPTARG}key"
       for value in "${!bundlekeys[@]}"; do
-        if [[ "${value}" == "${hibkey}" ]]; then
+        if [[ "${value}" == "${!hibkey}" ]]; then
          ## need to verify this loop
+
         fi
       done
       ;;
