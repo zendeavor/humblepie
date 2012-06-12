@@ -5,9 +5,13 @@
 ###
 ###
 ###############################################################################
+## covered bundles:
+##  4, 5, frozensynapse, introversion(maybe?)
 OPTIND=1
 rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
 [[ -f "${rcfile}" ]] && . "${rcfile}"
+
+declare -a bundlekeys
 
 bundlekeys=('hib1key' 
             'hib2key'
@@ -23,6 +27,12 @@ bundlekeys=('hib1key'
             'hibmojangkey'
             'hibvoxatronkey'
             )
+
+declare -Ar hib1 hib2 hib3 hib4 hib5
+declare -Ar hibandroid1 hibandroid2
+declare -Ar hibbotanicula hibfrozenbyte
+declare -Ar hibfrozensynapse hibintroversion
+declare -Ar hibmojang hibvoxatron
 
 hib1=( 
       ["aquaria"]="aquaria"
@@ -190,7 +200,7 @@ hibvoxatron=(
             )
 
 ## options
-# -a [architecture]: i386, i686, amd64, x86_86, all
+# -a [architecture]: i386, i686, amd64, x86_64, all
 # -b [bundle]: which bundle to use
 # -d [path]: directory where game should exist
 # -g [game]: which game to perform work on
@@ -248,7 +258,7 @@ checkkey() {
   for v in "${!bundlekeys[@]}"; do
     if [[ "${v}" == "${!k}" ]]; then
       ## need to verify this loop
-      hibkey="$v"
+      hibkey="${v}"
       checkbundle
     else
       echo "${k} was not found!"
@@ -290,11 +300,11 @@ _dlgame() {
         uri="${uri##*data-bt\=\'}"
         uri="${uri%%\'*}" 
         echo "To resume this download later run:"
-        echo "\`aria2c ${pkgname}.torrent\`"
-        [[ ! -f "${pkgname}.torrent" ]] &&
-          curl -o "${pkgname}.torrent" "${uri}"
-        aria2c "${pkgname}.torrent" --seed-time=0
-        mv "${pkgname}.torrent" "${hibtorr}"
+        echo "\`aria2c ${pkg}.torrent\`"
+        [[ ! -f "${pkg}.torrent" ]] &&
+          curl -o "${pkg}.torrent" "${uri}"
+        aria2c "${pkg}.torrent" --seed-time=0
+        mv "${pkg}.torrent" "${hibtorr}"
       else
         echo "aria2c executable not found! Please install aria2."
       fi
