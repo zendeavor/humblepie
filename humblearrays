@@ -1,0 +1,188 @@
+declare -a bundlekeys
+
+bundlekeys=('hib1key' 
+            'hib2key'
+            'hib3key'
+            'hib4key'
+            'hib5key'
+            'hibandroid1key'
+            'hibandroid2key'
+            'hibbotaniculakey'
+            'hibfrozenbytekey'
+            'hibfrozensynapsekey'
+            'hibintroversionkey'
+            'hibmojangkey'
+            'hibvoxatronkey'
+            )
+
+declare -Ar hib1 hib2 hib3 hib4 hib5
+declare -Ar hibandroid1 hibandroid2
+declare -Ar hibbotanicula hibfrozenbyte hibfrozensynapse
+declare -Ar hibmojang hibvoxatron hibintroversion
+
+hib1=( 
+      ["aquaria"]="aquaria"
+      ["gish"]="gish"
+      ["lugaruhd"]="lugaruhd"
+      ["lugaru"]="lugaruhd"
+      ["lhd"]="lugaruhd"
+      ["penumbra"]="penumbraoverture"
+      ["po"]="penumbraoverture"
+      ["samorost2"]="samorost2"
+      ["s2"]="samorost2"
+      ["worldofgoo"]="worldofgoo" 
+      ["wog"]="worldofgoo"
+      )
+hib2=( 
+      ["braid"]="braid"
+      ["cortexcommand"]="cortexcommand" 
+      ["cc"]="cortexcommand"
+      ["osmos"]="osmos"
+      ["machinarium"]="machinarium"
+      ["revengeofthetitans"]="revengeofthetitans" 
+      ["rott"]="revengeofthetitans"
+      )
+hib3=( 
+      ["andyetitmoves"]="andyetitmoves" 
+      ["ayim"]="andyetitmoves"
+      ["atomzombiesmasher"]="atomzombiesmasher" 
+      ["azs"]="atomzombiesmasher"
+      ["cogs"]="cogs"
+      ["crayonphysicsdeluxe"]="crayonphysicsdeluxe"
+      ["crayonphysics"]="crayonphysicsdeluxe"
+      ["cpd"]="crayonphysicsdeluxe"
+      ["hammerfight"]="hammerfight" 
+      ["hf"]="hammerfight"
+      ["steelstormretribution"]="steelstormretribution"
+      ["steelstorm"]="steelstormretribution" 
+      ["ssr"]="steelstormretribution"
+      ["ss"]="steelstormretribution"
+      ["vvvvvv"]="VVVVVV" ["v"]="VVVVVV"
+      )
+hib4=( 
+      ["bittriprunner"]="bit.trip.runner" 
+      ["btr"]="bit.trip.runner"
+      ["cavestoryplus"]="cavestoryplus" 
+      ["cavestory"]="cavestoryplus"
+      ["csp"]="cavestoryplus"
+      ["jamestown"]="jtownlinux" 
+      ["jtown"]="jtownlinux" 
+      ["jt"]="jtownlinux"
+      ["nightskyhd"]="nightskyhd" 
+      ["nightsky"]="nightskyhd"
+      ["nshd"]="nightskyhd" 
+      ["ns"]="nightskyhd"
+      ["shank"]="shank"
+      ["supermeatboy"]="supermeatboy" 
+      ["smb"]="supermeatboy"
+      )
+hib5=( 
+      ["amnesiatdd"]="amnesiatdd" 
+      ["amnesia"]="amnesiatdd" 
+      ["bastion"]="bastion"
+      ["braid"]="braid"
+      ["limbo"]="limbo"
+      ["lonesurvivor"]="lonesurvivor" 
+      ["survivor"]="lonesurvivor"
+      ["ls"]="lonesurvivor"
+      ["psychonauts"]="psychonauts" 
+      ["pn"]="psychonauts"
+      ["supermeatboy"]="supermeatboy" 
+      ["smb"]="supermeatboy"
+      ["swordandsworcery"]="swordandsworcery" 
+      ["s&s"]="swordandsworcery"
+      ["sas"]="swordandsworcery"
+      )
+hibandroid1=( 
+            ["anomalywarzoneearth"]="anomalywarzoneearth" 
+            ["anomaly"]="anomalywarzoneearth"
+            ["edge"]="edge"
+            ["osmos"]="osmos"
+            ["tokitori"]="tokitori" 
+            ["toki"]="tokitori" 
+            ["tt"]="tokitori"
+            ["worldofgoo"]="worldofgoo" 
+            ["wog"]="worldofgoo" 
+            )
+hibandroid2=( 
+            ["avadontheblackfortress"]="avadontheblackfortress"
+            ["avadon"]="avadontheblackfortress"
+            ["atbf"]="avadontheblackfortress"
+            ["canabalt"]="canabalt"
+            ["cogs"]="cogs"
+            ["snuggletruck"]="snuggletruck" 
+            ["st"]="snuggletruck"
+            ["swordsandsoldiers"]="swordsandsoldiers"
+            ["s&s"]="swordsandsoldiers" 
+            ["sas"]="swordsandsoldiers"
+            ["zenbound2"]="zenbound2" 
+            ["zenbound"]="zenbound2"
+            ["zb2"]="zenbound2" 
+            ["zb"]="zenbound2" 
+            )
+hibbotanicula=( 
+              ["botanicula"]="botanicula"
+              ["machinarium"]="machinarium"
+              ["samorost2"]="samorost2" 
+              ["samorost"]="samorost2"
+              ["s2"]="samorost2" 
+              )
+hibfrozenbyte=( 
+              ["jackclawbeta"]="claw" 
+              ["jackclaw"]="claw"
+              ["jcb"]="claw" 
+              ["jc"]="claw"
+              ["shadowgrounds"]="shadowgrounds" 
+              ["sg"]="shadowgrounds"
+              ["shadowgroundssurvivor"]="survivor" 
+              ["sgs"]="surivor"
+              ["splot"]="splot"
+              ["trine"]="Trine" 
+              )
+hibfrozensynapse=( 
+                  ["frozensynapse"]="frozensynapse" 
+                  ["fs"]="frozensynapse"
+                  ["spacechem"]="spacechem" 
+                  ["sc"]="spacechem"
+                  ["trauma"]="tramua"
+                  )
+hibintroversion=( 
+                ["aquaria"]="aquaria"
+                ["crayonphysicsdeluxe"]="crayonphysicsdeluxe"
+                ["crayonphysics"]="crayonphysicsdeluxe"
+                ["cpd"]="crayonphysicsdeluxe"
+                ["darwinia"]="darwinia" 
+                ["dw"]="darwinia"
+                ["defcon"]="defcon"
+                ["dugeonsofdredmoor"]="dugeonsofdredmoor"
+                ["dod"]="dungeonsofdredmoor"
+                ["multiwinia"]="multiwinia" 
+                ["mw"]="multiwinia"
+                ["uplink"]="uplink" 
+                ["ul"]="uplink"
+                )
+hibmojam=( 
+          ["catacombsnatch"]="catacombsnatch" 
+          ["cs"]="catacombsnatch"
+          ["fistsofresistance"]="fistsofresistance" 
+          ["for"]="fistsofresistance"
+          ["thebroadsideexpress"]="thebroadsideexpress"
+          ["tbse"]="thebroadsideexpress"
+          )
+hibvoxatron=( 
+            ["blocksthatmatter"]="blocksthatmatter" 
+            ["btm"]="blocksthatmatter"
+            ["chocolatecastle"]="chocolatecastle" 
+            ["cc"]="chocolatecastle"
+            ["gish"]="gish"
+            ["jaspersjourneys"]="jaspersjourneys" 
+            ["jj"]="jaspersjourneys"
+            ["thebindingofisaac"]="thebindingofisaac"
+            ["tboc"]="thebindingofisaac" 
+            ["voxatron"]="voxatron" 
+            ["vox"]="voxatron"
+            ["zenpuzzlegarden"]="zenpuzzlegarden" 
+            ["zpg"]="zenpuzzlegarden"
+            )
+
+# vim: ft=sh sw=2 sts=2 et sta
