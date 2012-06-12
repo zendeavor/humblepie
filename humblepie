@@ -214,7 +214,6 @@ while getopts "vha:d:g:k:t:" opt; do
       ;;
     g) ## do the game stuff; probably _checkgame && _dlgame
       hibgame="${OPTARG}"
-      gamever
       ;;
     h) ## print usage
       ;;
@@ -250,7 +249,9 @@ checkkey() {
     if [[ "${v}" == "${!k}" ]]; then
       ## need to verify this loop
       hibkey="$v"
-      ## go to bundle check function
+      checkbundle
+    else
+      echo "${k} was not found!"
     fi
   done
 }
@@ -258,122 +259,20 @@ checkkey() {
 checkbundle() {
   case "${hibkey}" in
     ## set my important values to variables and kick to the downloader
-    hib1key) ;;
-    hib2key) ;;
-    hib3key) ;;
-    hib4key) ;;
-    hib5key) ;;
-    hibandroid1key) ;;
-    hibandroid2key) ;;
-    hibbotaniculakey) ;;
-    hibfrozenbytekey) ;;
-    hibfrozensynapsekey) ;;
-    hibintroversionkey) ;;
-    hibmojamkey) ;;
-    hibvoxatronkey) ;;
+    hib1key) hib1;;
+    hib2key) hib2;;
+    hib3key) hib3;;
+    hib4key) hib4;;
+    hib5key) hib5;;
+    hibandroid1key) hibandroid1;;
+    hibandroid2key) hibandroid2;;
+    hibbotaniculakey) hibbotanicula;;
+    hibfrozenbytekey) hibfrozenbyte;;
+    hibfrozensynapsekey) hibfrozensynapse;;
+    hibintroversionkey) hibintroversion;;
+    hibmojamkey) hibmojam;;
+    hibvoxatronkey) hibvoxatron;;
   esac
-}
-
-gamever() {
-  for _key in "${hibgames[@]}"; do
-    case "${_key}" in
-      andyetitmoves) ## all of these games have shit naming conventions
-        ## andyetitmoves-1.2.2-1_x86_64.tar.gz
-        ver="1.2.2-1"
-        break
-        ;;
-      bittriprunner) ## pfft
-        ## bit.trip.runner_amd64.tar.gz
-        break
-        ;;
-      braid) 
-        ## braid_1.0.0-0ubuntu2_amd64.deb
-        ver="1.0.0-0"
-        break
-        ;;
-      cavestoryplus)
-        ## cavestoryplus-linux-1324519044.tar.gz
-        ver="1324519044"
-        platform="linux"
-        break
-        ;;
-      claw)
-        ## clawBeta3.zip
-        ver="Beta3"
-        break
-        ;;
-      cogs) 
-        ## cogs_20110811_all.tar.gz
-        ver="20110811"
-        break
-        ;;
-      crayonphysicsdelux)
-        ## crayon-physics-deluxe_55_i386.tar.gz
-        ver="55"
-        break
-        ;;
-      gratuitousspacebattles)
-        ## gsb1324679796.tar.gz
-        ver="1324679796"
-        break
-        ;;
-      hammerfight)
-        ## hammerfight_1.004_all.tar.gz
-        ver="1.004"
-        break
-        ;;
-      jamestown)
-        ## jtownlinux_1_0_1_1324610248.zip
-        ver="1_0_1_1324610248"
-        break
-        ;;
-      lonesurvivor)
-        ## lonesurvivor-1.11d-amd64.tar.gz
-        ver="1.11d"
-        break
-        ;;
-      nightskyhd)
-        ## nightskyhd-linux-1324519044.tar.gz
-        ver="1324519044"
-        platform="linux"
-        break
-        ;;                   
-      psychonauts)
-        ## psychonuts-linux-test-06032012.tar.bz2
-        ver="06032012"
-        platform="linux"
-        break
-        ;;
-      shadowgrounds)
-        ## shadowgroundsUpdate1.run
-        ver="Update1"
-        break
-        ;;
-      shank)
-        ## shank-linux-120720110-1-bin
-        ver="120720110-1"
-        break
-        ;;
-      supermeatboy)
-        ## supermeatboy-linux-06072012-bin
-        ver="06072012"
-        platform="linux"
-        break
-        ;;
-      survivor)
-        ## survivorUpdate1.run
-        ver="Update1"
-        break
-        ;;
-      VVVVVV)
-        ## VVVVVV_2.01_Linux.tar.gz
-        ver="2.01"
-        platform="Linux"
-        break
-        ;;
-      *) echo "Sorry, ${_key} is not yet supported." ;;
-    esac
-  done
 }
 
 _dlgame() {
@@ -410,6 +309,108 @@ _dlgame() {
   esac
 }
 
+# gamever() {
+#   for _key in "${hibgames[@]}"; do
+#     case "${_key}" in
+#       ## all of these games have shit naming conventions
+#       andyetitmoves)
+#         ## andyetitmoves-1.2.2-1_x86_64.tar.gz
+#         ver="1.2.2-1"
+#         break
+#         ;;
+#       bittriprunner) ## pfft
+#         ## bit.trip.runner_amd64.tar.gz
+#         break
+#         ;;
+#       braid) 
+#         ## braid_1.0.0-0ubuntu2_amd64.deb
+#         ver="1.0.0-0"
+#         break
+#         ;;
+#       cavestoryplus)
+#         ## cavestoryplus-linux-1324519044.tar.gz
+#         ver="1324519044"
+#         platform="linux"
+#         break
+#         ;;
+#       claw)
+#         ## clawBeta3.zip
+#         ver="Beta3"
+#         break
+#         ;;
+#       cogs) 
+#         ## cogs_20110811_all.tar.gz
+#         ver="20110811"
+#         break
+#         ;;
+#       crayonphysicsdelux)
+#         ## crayon-physics-deluxe_55_i386.tar.gz
+#         ver="55"
+#         break
+#         ;;
+#       gratuitousspacebattles)
+#         ## gsb1324679796.tar.gz
+#         ver="1324679796"
+#         break
+#         ;;
+#       hammerfight)
+#         ## hammerfight_1.004_all.tar.gz
+#         ver="1.004"
+#         break
+#         ;;
+#       jamestown)
+#         ## jtownlinux_1_0_1_1324610248.zip
+#         ver="1_0_1_1324610248"
+#         break
+#         ;;
+#       lonesurvivor)
+#         ## lonesurvivor-1.11d-amd64.tar.gz
+#         ver="1.11d"
+#         break
+#         ;;
+#       nightskyhd)
+#         ## nightskyhd-linux-1324519044.tar.gz
+#         ver="1324519044"
+#         platform="linux"
+#         break
+#         ;;                   
+#       psychonauts)
+#         ## psychonuts-linux-test-06032012.tar.bz2
+#         ver="06032012"
+#         platform="linux"
+#         break
+#         ;;
+#       shadowgrounds)
+#         ## shadowgroundsUpdate1.run
+#         ver="Update1"
+#         break
+#         ;;
+#       shank)
+#         ## shank-linux-120720110-1-bin
+#         ver="120720110-1"
+#         break
+#         ;;
+#       supermeatboy)
+#         ## supermeatboy-linux-06072012-bin
+#         ver="06072012"
+#         platform="linux"
+#         break
+#         ;;
+#       survivor)
+#         ## survivorUpdate1.run
+#         ver="Update1"
+#         break
+#         ;;
+#       VVVVVV)
+#         ## VVVVVV_2.01_Linux.tar.gz
+#         ver="2.01"
+#         platform="Linux"
+#         break
+#         ;;
+#       *) echo "Sorry, ${_key} is not yet supported." ;;
+#     esac
+#   done
+# }
 # [[ -f "${hibdir}/${hibgame}" ]] && {
 #   ln -sf "${hibdir}/${hibgame}" .
 # }
