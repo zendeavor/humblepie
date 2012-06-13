@@ -126,18 +126,18 @@ check_dir() {
 # }
 
 broken() {
-  [[ "${verbose}" != "y" ]]
-  echo "Something's wrong..."
-  echo "Try again with -v or set verbose=y in ${rcfile}"
-  exit 1
+  [[ "${verbose}" != "y" ]] &&
+    echo "Something's wrong..."
+    echo "Try again with -v or set verbose=y in ${rcfile}"
+    exit 1
 }
 
 verbose() {
   [[ "${verbose}" == "y" ]] && {
     local info="$1"; shift
     declare -a mesg
-    for args in "$@"; do
-      mesg+="${args}"
+    for a in "$@"; do
+      mesg+=("$a")
       shift
     done
     printf "==> "$(gettext "${info}:") ${mesg[@]}\n" "$@" >&2
