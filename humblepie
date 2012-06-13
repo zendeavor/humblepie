@@ -73,25 +73,26 @@ check_key() {
 }
 
 check_arch() {
-  [[ -n "${hibarch}" && "${hibarch}" == "32" || "${hibarch}" == "64" ]] || {
-    if [[ "$(uname -m)" =~ "i.86" ]]; then
-      hibarch="32"
-    else
-      hibarch="64"
-    fi
-}
-
+  if [[ -n "${hibarch}" ]]; then
+    [[ "${hibarch}" =~ "i.86" || "${hibarch}" == "x86_64" ]] || {
+      [[ -n "${verbose}" ]] && {
+        warning "Invalid value for hibarch."
+        echo "Using $(uname -m) instead..."
+      }
+    hibarch="$(uname -m)"
+    }
+  fi
 }
 
 check_dir() {
   directory="$1"
   if [[ -n "${directory}" ]]; then
     [[ -w "${directory}" ]] || {
-      [[ -n "${verbose}" ]] && {
+      if [[ -n "${verbose}" ]]; then
         warning "${directory} does not exist or is not writable!"
-      } || {
-      broken
-      }
+      elif [[ -z "${verbose}" ]]; then
+        broken
+      fi
     }
   elif [[ -z "${directory}" ]]; then
     [[ -n "${verbose}" ]] && {
