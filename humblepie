@@ -26,12 +26,16 @@ rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
 # need something for specifying system to determine which download to grab
 # allow systemwide installs as root
 
-while getopts "vha:cd:g:ik:t:" opt; do
+while getopts "vha:b:cd:g:i:k:t:" opt; do
   case "$opt" in
     a) ## send to a function to set the right arch
       ### there is no convention in the downloads so...
       ### i have to depend on gamename to sanitize it
       hibarch="${OPTARG}"
+      ;;
+    b) ## set the bundle to check for key
+      hibundle="${OPTARG}"
+      checkkey
       ;;
     c) checksum="y"
     d) ## set the download/game dir
@@ -43,10 +47,9 @@ while getopts "vha:cd:g:ik:t:" opt; do
       ;;
     h) ## print usage
       ;;
-    k) ## set the key to use
-      hibundle="${OPTARG}"
-      checkkey
+    i) installdir="${OPTARG}"
       ;;
+    k) 
     t) ## set the .torrent dir
       hibtorr="${OPTARG}"
       torrdir
@@ -89,7 +92,8 @@ checkkey() {
 }
 
 checkarch() {
-  [[ -z "${hibarch}" ]] && {
+  [[ -z "${hibarch}" ]] && 
+    [[ "${hibarch}" == "32" || "${hibarch}" == "64" ]] && {
   if [[ "$(uname -m)" =~ "i?86" ]]; then
     hibarch="32"
   else
