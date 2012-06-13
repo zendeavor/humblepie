@@ -38,6 +38,7 @@ while getopts "a:b:d:g:i:k:o:r:t:u:U:v:chIV" opt; do
     c) ## check_game should verify md5, not implemented
       check_sum="y"
       game_checksum="${OPTARG}"
+
       ;;
     d) ## set the download/game dir
       hib_dir="${OPTARG}"
@@ -111,13 +112,8 @@ if [[ ${verbose} == "y" ]]; then
       done
       printf "%s\t%s\n" "==> $(gettext "${info}":)" "${mesg[@]}"
   } >&2
-  broken() {
-    :
-  } &>/dev/null
+  broken() { : } &>/dev/null
 else
-  verbose() {
-    :
-  } &>/dev/null
   broken() {
     local info="$1"; shift
     printf "%s\n\t%s\n" "==> Something is wrong..." \
@@ -125,6 +121,7 @@ else
       "PROBLEM: ${info[@]}" "$@"
     exit 1
   } >&2
+  verbose() { : } &>/dev/null
 fi
 
 check_key() {
@@ -268,6 +265,8 @@ main() {
   exit
   }
 }
+
+main
 
 # sanitize_name() {
 #   case "${hib_key}" in
