@@ -27,7 +27,7 @@ rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
 # need something for specifying system to determine which download to grab
 
 OPTIND=1
-while getopts "a:b:cd:g:i:k:o:r:t:u:U:v:hIV" opt; do
+while getopts "a:b:d:g:i:k:o:r:t:u:U:v:chIV" opt; do
   case "$opt" in
     a) ## check_arch will make sure i get a value i can work with
       hib_arch="${OPTARG}"
@@ -37,6 +37,7 @@ while getopts "a:b:cd:g:i:k:o:r:t:u:U:v:hIV" opt; do
       ;;
     c) ## check_game should verify md5, not implemented
       check_sum="y"
+      game_checksum="${OPTARG}"
       ;;
     d) ## set the download/game dir
       hib_dir="${OPTARG}"
@@ -64,13 +65,8 @@ while getopts "a:b:cd:g:i:k:o:r:t:u:U:v:hIV" opt; do
           ;;
       esac
       ;;
-    o) ## set options for torrent_program; these MUST be quoted
-      case "${dl_method}" in
-        torrent) dl_opts="${OPTARG}"
-          ;;
-        http) dl_opts="${OPTARG}"
-          ;;
-      esac
+    o) ## set options for download; these MUST be quoted
+      dl_opts="${OPTARG}"
       ;;
     r|R|u|U) : ## uninstall the game; essentially, just rm -rf the install dir
       # which means i need some way to FIND the install dir if not in rcfile
@@ -189,7 +185,7 @@ check_dir() {
             d="hib_torrent_dir"
             ;;
           *)
-            verbose "ERROR" "$1 should only be hib_dir or hib_torrent_dir!"
+            verbose "ERROR" "${d} should only be hib_dir or hib_torrent_dir!"
             exit 1
             ;;
         esac
@@ -240,17 +236,29 @@ dl_game() {
   esac
 }
 
-_main() {
+check_sum(){
+  [[ "${check_sum}" == "y" ]] && {
+    hib_game_md5sum="$(md5sum "${hib_game}")"
+    [[ "${hib_game_md5sum}" == "${hib_md5[$hib_game]" ]] || {
+      broken "MD5 did not match."
+      verbose "ERROR" "${hib_game_md5sum} does not match ${hib_md5[$hib_game]}"
+    }
+  }
+}
+
+main() {
   check_arch "${hib_arch}"
   check_key "${hib_bundle}"
   check_dir "${hib_dir}"
   [[ "${dl_method}" == "torrent"  ]] && {
     check_dir "${hib_torrent_dir}"
   }
-  # sanitize_name
+  sanitize_name "${hib_game}"
+  dl_game "${hib_game}"
+  check_sum "${hib_game}"
 }
 
-[[ (( EUID = 0 )) ]] && {
+(( EUID )) && {
   printf "%s%s\n\t%s"  "You are running this script as root! " \
     "This is potentially dangerous!" \
     "Continue? (y/N): "

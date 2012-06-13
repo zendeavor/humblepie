@@ -1,23 +1,23 @@
 declare -ar bundlekeys
 
-bundlekeys=('hib1key' 
-            'hib2key'
-            'hib3key'
-            'hib4key'
-            'hib5key'
-            'hibandroid1key'
-            'hibandroid2key'
-            'hibbotaniculakey'
-            'hibfrozenbytekey'
-            'hibfrozensynapsekey'
-            'hibintroversionkey'
-            'hibmojangkey'
-            'hibvoxatronkey'
+bundlekeys=('hib_1_key' 
+            'hib_2_key'
+            'hib_3_key'
+            'hib_4_key'
+            'hib_5_key'
+            'hib_android1_key'
+            'hib_android2_key'
+            'hib_botanicula_key'
+            'hib_frozenbyte_key'
+            'hib_frozensynapse_key'
+            'hib_introversion_key'
+            'hib_mojang_key'
+            'hib_voxatron_key'
             )
 
 declare -ar architectures
 
-architectures=('32' '64')
+architectures=('i386' 'i686' 'x86_64')
 
 declare -Ar hib1 hib2 hib3 hib4 hib5
 declare -Ar hibandroid1 hibandroid2
