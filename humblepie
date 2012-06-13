@@ -75,24 +75,19 @@ check_key() {
 check_arch() {
   if [[ -n "${hib_arch}" ]]; then
     [[ "${hib_arch}" =~ "i.86" || "${hib_arch}" == "x86_64" ]] || {
-      [[ -n "${verbose}" ]] && {
-        warning "Invalid value for hib_arch."
-      }
+        verbose "WARNING" "Invalid value for hib_arch.\n" \
+          "\tValid values are i386, i686, x86_64"
       [[ "${automagic}" == "y" ]] && {
-        [[ -n "${verbose}" ]] && {
-          echo "Using $(uname -m) instead..."
-        }
+        verbose "INFO" "Using $(uname -m) instead..."
         hib_arch="$(uname -m)"
       }
     }
   else 
-    [[ -n "${verbose}" ]] && {
-      error "hib_arch has not been specified."
-    }
+      verbose "WARNING" "hib_arch has not been specified.\n" \
+        "Please set hib_arch in ${rcfile} " \
+        "or specify it with -a [i386, i686, x86_64]"
     [[ "${automagic}" == "y" ]] && {
-      [[ -n "${verbose}" ]] {
-        echo "Using $(uname -m) instead..."
-    }
+      verbose "INFO" "Using $(uname -m) instead..."
       hib_arch="$(uname -m)"
     }
   fi
@@ -102,37 +97,44 @@ check_dir() {
   local directory
   directory="$1"
   if [[ -d "${directory}" ]]; then
-    [[ -w "${directory}" ]] 
-    [[ -n "${verbose}" ]] && {
-      warning "${directory} does not exist or is not writable!"
-      directory="${directory}/humbleindiebundle"
-      echo "Using ${directory} instead..."
+    [[ -w "${directory}" ]] || {
+      verbose "WARNING" "${directory} does not exist or is not writable!"
+      [[ "${automagic}" == "y" ]] && {
+        verbose "INFO""Using ${directory} instead..."
+        directory="${directory}/humbleindiebundle"
+        mkdir -p "${directory}"
+      }
     }
-    mkdir -p "${directory}"
   else
-    [[ -n "${verbose}" ]] && {
-      warning "No download directory specified."
-      warning "Using current directory instead..."
-    } 
+    verbose "WARNING" "No download directory specified.\n" \
+      "\tUsing current directory instead..."
     directory="$PWD"
   fi
 }
 
-warning() {
-  local mesg="$1"; shift
-  printf "==> $(gettext "WARNING:") ${mesg}\n" "$@" >&2
-}
+# warning() {
+#   local mesg="$1"; shift
+#   printf "==> $(gettext "WARNING:") ${mesg}\n" "$@" >&2
+# }
 
-error() {
-  local mesg="$1"; shift
-  printf "==> $(gettext "ERROR:") ${mesg}\n" "$@" >&2
-  exit 1
-}
+# error() {
+#   local mesg="$1"; shift
+#   printf "==> $(gettext "ERROR:") ${mesg}\n" "$@" >&2
+#   exit 1
+# }
 
 broken() {
+  [[ "${verbose}" != "y" ]]
   echo "Something's wrong..."
-  echo "Try again with -v."
+  echo "Try again with -v or set verbose=y in ${rcfile}"
   exit 1
+}
+
+verbose() {
+  [[ "${verbose}" == "y" ]] && {
+    local info="$1" mesg="$2"; shift 2
+    printf "==> $(gettext ${info}:) ${mesg}\n" "$@" >&2
+  }
 }
 
 _main() {
