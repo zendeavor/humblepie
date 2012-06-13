@@ -15,7 +15,7 @@ rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
 ## options
 # -a [architecture]: 32, 64
 # -b [bundle]: which bundle to use
-# -c: checksum the game, optional
+# -c: check_sum the game, optional
 # -d [path]: directory where game should exist
 # -g [game]: which game to perform work on
 # -h: print usage
@@ -33,16 +33,16 @@ while getopts "vha:b:cd:g:i:k:t:" opt; do
       ### i have to depend on gamename to sanitize it
       hibarch="${OPTARG}"
       ;;
-    b) ## set the bundle to check for key
-      hibundle="${OPTARG}"
-      checkkey
+    b) ## set the bundle to check_ for key
+      hibundle="hib_${OPTARG}_key"
+      check_key
       ;;
-    c) checksum="y"
+    c) check_sum="y"
     d) ## set the download/game dir
       hibdir="${OPTARG}"
-      gamedir
+      check_dir "${hibdir}"
       ;;
-    g) ## do the game stuff; probably _checkgame && _dlgame
+    g) ## do the game stuff; probably _check_game && _dlgame
       hibgame="${OPTARG}"
       ;;
     h) ## print usage
@@ -51,49 +51,30 @@ while getopts "vha:b:cd:g:i:k:t:" opt; do
       ;;
     k) 
     t) ## set the .torrent dir
-      hibtorr="${OPTARG}"
-      torrdir
+      hibtorrentdir="${OPTARG}"
+      check_dir "${hibtorrentdir}"
       ;;
     v) verbose="y"
       ;;
   esac
 done
 
-checkbundle() {
-  case "${hibkey}" in
-    ## set my important values to variables and kick to the downloader
-    hib1key) hib1;;
-    hib2key) hib2;;
-    hib3key) hib3;;
-    hib4key) hib4;;
-    hib5key) hib5;;
-    hibandroid1key) hibandroid1;;
-    hibandroid2key) hibandroid2;;
-    hibbotaniculakey) hibbotanicula;;
-    hibfrozenbytekey) hibfrozenbyte;;
-    hibfrozensynapsekey) hibfrozensynapse;;
-    hibintroversionkey) hibintroversion;;
-    hibmojamkey) hibmojam;;
-    hibvoxatronkey) hibvoxatron;;
-  esac
-}
-
-checkkey() {
+check_key() {
   local k
-  k="hib${hibundle}key"
+  k="hibundle"
   for v in "${!bundlekeys[@]}"; do
     if [[ "${v}" == "${!k}" ]]; then
       hibkey="${v}"
-      checkbundle
+      # check_bundle
     else
       error "${!k} was not found!"
     fi
   done
 }
 
-checkarch() {
+check_arch() {
   [[ -n "${hibarch}" && "${hibarch}" == "32" || "${hibarch}" == "64" ]] || {
-    if [[ "$(uname -m)" =~ "i?86" ]]; then
+    if [[ "$(uname -m)" =~ "i.86" ]]; then
       hibarch="32"
     else
       hibarch="64"
@@ -102,28 +83,59 @@ checkarch() {
 
 }
 
-gamedir() {
-  [[ -w "${hibdir}" ]] || {
-    error "${hibdir} does not exist or you do not have writable permissions!"
-    exit 1
-  }
-}
-
-torrdir() {
-  [[ -w "${hibtorr}" ]] || {
-    error "${hibtorr} does not exist or you do not have writable permissions!"
-    exit 1
-  }
+check_dir() {
+  directory="$1"
+  if [[ -n "${directory}" ]]; then
+    [[ -w "${directory}" ]] || {
+      [[ -n "${verbose}" ]] && {
+        warning "${directory} does not exist or is not writable!"
+      } || {
+      broken
+      }
+    }
+  elif [[ -z "${directory}" ]]; then
+    [[ -n "${verbose}" ]] && {
+      warning "No download directory specified."
+      warning "Using current directory instead..."
+    } 
+    directory="$PWD"
+  fi
 }
 
 warning() {
-  local mesg="${1}"; shift
+  local mesg="$1"; shift
   printf "==> $(gettext "WARNING:") ${mesg}\n" "$@" >&2
 }
 
 error() {
-  local mesg="${1}"; shift
+  local mesg="$1"; shift
   printf "==> $(gettext "ERROR:") ${mesg}\n" "$@" >&2
+  exit 1
 }
+
+broken() {
+  echo "Something's wrong..."
+  echo "Try again with -v."
+  exit 1
+}
+
+# check_bundle() {
+#   case "${hibkey}" in
+#     ## set my important values to variables and kick to the downloader
+#     hib1key) hib1;;
+#     hib2key) hib2;;
+#     hib3key) hib3;;
+#     hib4key) hib4;;
+#     hib5key) hib5;;
+#     hibandroid1key) hibandroid1;;
+#     hibandroid2key) hibandroid2;;
+#     hibbotaniculakey) hibbotanicula;;
+#     hibfrozenbytekey) hibfrozenbyte;;
+#     hibfrozensynapsekey) hibfrozensynapse;;
+#     hibintroversionkey) hibintroversion;;
+#     hibmojamkey) hibmojam;;
+#     hibvoxatronkey) hibvoxatron;;
+#   esac
+# }
 
 # vim: ft=sh sw=2 sts=2 et
