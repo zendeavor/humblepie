@@ -20,7 +20,7 @@ rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
 # -g [game]: which game to perform work on
 # -h: print usage
 # -i [dir]: install game into specified directory
-# -k [key]: set HiB key
+# -k [key]: set hib_ key
 # -t [path]: directory where torrent files should exist
 # -v: verbosity
 # need something for specifying system to determine which download to grab
@@ -28,43 +28,43 @@ rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
 
 while getopts "vha:b:cd:g:i:k:t:" opt; do
   case "$opt" in
-    a) ## send to a function to set the right arch
-      ### there is no convention in the downloads so...
-      ### i have to depend on gamename to sanitize it
-      hibarch="${OPTARG}"
+    a) ## check_arch will make sure i get a value i can work with
+      hib_arch="${OPTARG}"
       ;;
-    b) ## set the bundle to check_ for key
-      hibundle="hib_${OPTARG}_key"
-      check_key
+    b) ## check_key should successfully verify that keys match
+      hib_bundle="hib_${OPTARG}_key"
       ;;
     c) check_sum="y"
     d) ## set the download/game dir
-      hibdir="${OPTARG}"
-      check_dir "${hibdir}"
+      hib_dir="${OPTARG}"
       ;;
-    g) ## do the game stuff; probably _check_game && _dlgame
-      hibgame="${OPTARG}"
+    g) ## this should just store the game name
+      ## for now, i plan to have another function that kicks off the rest
+      hib_game="${OPTARG}"
       ;;
     h) ## print usage
       ;;
-    i) installdir="${OPTARG}"
+    i) install_dir="${OPTARG}"
       ;;
-    k) 
+    k) ## specify a key manually
+      ;;
     t) ## set the .torrent dir
-      hibtorrentdir="${OPTARG}"
-      check_dir "${hibtorrentdir}"
+      use_torrents=y
+      hib_torrent_dir="${OPTARG}"
       ;;
     v) verbose="y"
+      ;;
+    x) automagic="y"
       ;;
   esac
 done
 
 check_key() {
   local k
-  k="hibundle"
+  k="hib_bundle"
   for v in "${!bundlekeys[@]}"; do
     if [[ "${v}" == "${!k}" ]]; then
-      hibkey="${v}"
+      hib_key="${v}"
       # check_bundle
     else
       error "${!k} was not found!"
@@ -73,28 +73,43 @@ check_key() {
 }
 
 check_arch() {
-  if [[ -n "${hibarch}" ]]; then
-    [[ "${hibarch}" =~ "i.86" || "${hibarch}" == "x86_64" ]] || {
+  if [[ -n "${hib_arch}" ]]; then
+    [[ "${hib_arch}" =~ "i.86" || "${hib_arch}" == "x86_64" ]] || {
       [[ -n "${verbose}" ]] && {
-        warning "Invalid value for hibarch."
-        echo "Using $(uname -m) instead..."
+        warning "Invalid value for hib_arch."
       }
-    hibarch="$(uname -m)"
+      [[ "${automagic}" == "y" ]] && {
+        [[ -n "${verbose}" ]] && {
+          echo "Using $(uname -m) instead..."
+        }
+        hib_arch="$(uname -m)"
+      }
+    }
+  else 
+    [[ -n "${verbose}" ]] && {
+      error "hib_arch has not been specified."
+    }
+    [[ "${automagic}" == "y" ]] && {
+      [[ -n "${verbose}" ]] {
+        echo "Using $(uname -m) instead..."
+    }
+      hib_arch="$(uname -m)"
     }
   fi
 }
 
 check_dir() {
+  local directory
   directory="$1"
-  if [[ -n "${directory}" ]]; then
-    [[ -w "${directory}" ]] || {
-      if [[ -n "${verbose}" ]]; then
-        warning "${directory} does not exist or is not writable!"
-      elif [[ -z "${verbose}" ]]; then
-        broken
-      fi
+  if [[ -d "${directory}" ]]; then
+    [[ -w "${directory}" ]] 
+    [[ -n "${verbose}" ]] && {
+      warning "${directory} does not exist or is not writable!"
+      directory="${directory}/humbleindiebundle"
+      echo "Using ${directory} instead..."
     }
-  elif [[ -z "${directory}" ]]; then
+    mkdir -p "${directory}"
+  else
     [[ -n "${verbose}" ]] && {
       warning "No download directory specified."
       warning "Using current directory instead..."
@@ -120,22 +135,31 @@ broken() {
   exit 1
 }
 
+_main() {
+  check_arch
+  check_key "${hib_bundle}"
+  check_dir "${hib_dir}"
+  [[ "${use_torrents}" == "y"  ]] && {
+    check_dir "${hib_torrent_dir}"
+  }
+}
+
 # check_bundle() {
-#   case "${hibkey}" in
+#   case "${hib_key}" in
 #     ## set my important values to variables and kick to the downloader
-#     hib1key) hib1;;
-#     hib2key) hib2;;
-#     hib3key) hib3;;
-#     hib4key) hib4;;
-#     hib5key) hib5;;
-#     hibandroid1key) hibandroid1;;
-#     hibandroid2key) hibandroid2;;
-#     hibbotaniculakey) hibbotanicula;;
-#     hibfrozenbytekey) hibfrozenbyte;;
-#     hibfrozensynapsekey) hibfrozensynapse;;
-#     hibintroversionkey) hibintroversion;;
-#     hibmojamkey) hibmojam;;
-#     hibvoxatronkey) hibvoxatron;;
+#     hib_1key) hib_1;;
+#     hib_2key) hib_2;;
+#     hib_3key) hib_3;;
+#     hib_4key) hib_4;;
+#     hib_5key) hib_5;;
+#     hib_android1key) hib_android1;;
+#     hib_android2key) hib_android2;;
+#     hib_botaniculakey) hib_botanicula;;
+#     hib_frozenbytekey) hib_frozenbyte;;
+#     hib_frozensynapsekey) hib_frozensynapse;;
+#     hib_introversionkey) hib_introversion;;
+#     hib_mojamkey) hib_mojam;;
+#     hib_voxatronkey) hib_voxatron;;
 #   esac
 # }
 
