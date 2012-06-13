@@ -102,7 +102,7 @@ check_dir() {
     [[ -w "${!directory}" ]] || {
       verbose "WARNING" "${!directory} does not exist or is not writable!"
       [[ "${automagic}" == "y" ]] && {
-        directory="${!directory}/humbleindiebundle"
+        directory="$PWD/humbleindiebundle"
         verbose "INFO""Using ${directory} instead..."
         mkdir -p "${directory}"
       }
@@ -140,7 +140,7 @@ verbose() {
       mesg+=("$a")
       shift
     done
-    printf "==> "$(gettext "${info}:") ${mesg[@]}\n" "$@" >&2
+    printf "==> $(gettext "${info}:") ${mesg[@]}\n" "$@" >&2
   }
 }
 
