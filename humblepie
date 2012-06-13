@@ -92,13 +92,12 @@ checkkey() {
 }
 
 checkarch() {
-  [[ -z "${hibarch}" ]] && 
-    [[ "${hibarch}" == "32" || "${hibarch}" == "64" ]] && {
-  if [[ "$(uname -m)" =~ "i?86" ]]; then
-    hibarch="32"
-  else
-    hibarch="64"
-  fi
+  [[ -n "${hibarch}" && "${hibarch}" == "32" || "${hibarch}" == "64" ]] || {
+    if [[ "$(uname -m)" =~ "i?86" ]]; then
+      hibarch="32"
+    else
+      hibarch="64"
+    fi
 }
 
 }
