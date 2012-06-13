@@ -7,7 +7,6 @@
 ###############################################################################
 ## covered bundles:
 ##  4, 5, frozensynapse, introversion(maybe?)
-OPTIND=1
 rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
 [[ -f "${rcfile}" ]] && . "${rcfile}"
 
@@ -22,12 +21,13 @@ rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
 # -i [dir]: install game into specified directory
 # -k [key]: set hib_key
 # -s [time]: time, in minutes, to seed the torrent after download
-# -T [path]: directory where torrent files should exist
+# -t [path]: directory where torrent files should exist
 # -v: verbosity
 # -V: print version
 # need something for specifying system to determine which download to grab
 
-while getopts "a:b:cd:g:i:k:o:r:T:u:hnv:V" opt; do
+OPTIND=1
+while getopts "a:b:cd:g:i:k:o:r:t:u:U:v:hIV" opt; do
   case "$opt" in
     a) ## check_arch will make sure i get a value i can work with
       hib_arch="${OPTARG}"
@@ -50,20 +50,19 @@ while getopts "a:b:cd:g:i:k:o:r:T:u:hnv:V" opt; do
     i) ## not implemented
       # install_dir="${OPTARG}"
       ;;
+    I) : ## not implemented, maybe never will but seems simplish
+      # interactive="y"
+      ;;
     k) ## specify a key manually
       hib_key="${OPTARG}"
       ;;
     m) ## set download method
       case "${OPTARG}" in
-        ## i can check for lots of binaries here, maybe. fuck that.
         t|torrent) dl_method="torrent"
           ;;
         h|http) dl_method="http"
           ;;
       esac
-      ;;
-    n) : ## not implemented, maybe never will
-      # interactive="y"
       ;;
     o) ## set options for torrent_program; these MUST be quoted
       case "${dl_method}" in
@@ -73,11 +72,20 @@ while getopts "a:b:cd:g:i:k:o:r:T:u:hnv:V" opt; do
           ;;
       esac
       ;;
-    r|u) : ## uninstall the game; essentially, just rm -rf the install dir
+    r|R|u|U) : ## uninstall the game; essentially, just rm -rf the install dir
       # which means i need some way to FIND the install dir if not in rcfile
       ;;
-    T) ## set the hib_torrent_dir
+    t) ## set the hib_torrent_dir
       hib_torrent_dir="${OPTARG}"
+      ;;
+    U) ## check for updates and download if possible
+      # if [[ "${OPTARG}" ]]; then
+      #   hib_game="${OPTARG}"
+      #   automagic="y"
+      #   updater
+      # else
+      #   updater "$0"
+      # fi
       ;;
     v) ## enable verbosity
       [[ "${OPTARG}" != "no" ]] &&
@@ -95,7 +103,7 @@ done
 [[ "${automagic}" == "y" ]] && verbose=y
 
 if [[ ${verbose} == "y" ]]; then
-  printf "%s\n%s\n%s\n" "Verbose reporting is on!" \
+  printf "%s\n\t%s\n\t%s\n" "Verbose reporting is on!" \
     "Run this program again with -x no and -v no to turn it off." \
     "Alternatively, use ${rcfile} to pre-configure all settings"
 
@@ -198,24 +206,26 @@ check_dir() {
 
 dl_game() {
   local uri
-  uri="$(curl -s http://www.humblebundle.com/downloads?key="${!hibkey}" \
-    | grep "${game}")"
+  # uri="$(curl -s http://www.humblebundle.com/downloads?key="${!hib_key}" \
+  #   | grep "${game}")"
   case "${dl_method}" in
     torrent)
-      if [[ -x "$(type -p aria2c)" ]]; then
+      [[ -x "$(type -p ${torrent_bin})" ]] || {
+        broken "${torrent_bin} not found."
+        verbose "ERROR" "${torrent_bin} executable not found!" \
+          "Please install ${torrent_bin}."
+        exit 1
+      }
+        uri="http://www.humblebundle.com/downloads?key=${!hib_key}"
         uri="${uri##*data-bt\=\'}"
         uri="${uri%%\'*}" 
-        echo "To resume this download later run:"
-        echo "\`${torrent_bin} ${dl_opts} ${game}.torrent\`"
-        [[ ! -f "${game}.torrent" ]] && {
-          curl -o "${game}.torrent" "${uri}"
-        mv "${game}.torrent" "${hib_torrent_dir}"
+        verbose "INFO" "To resume this download later run:" \
+          "\`${torrent_bin} ${dl_opts} ${game}.torrent\`"
+        [[ ! -f "${hib_torrent_dir}/${game}.torrent" ]] && {
+          curl -o "${hib_torrent_dir}/${game}.torrent" "${uri}"
         }
         (cd "${hib_torrent_dir}" &&
           "${torrent_bin}" "${dl_opts}" "${game}.torrent")
-      else
-        echo "${torrent_bin} executable not found! Please install aria2."
-      fi
         ;;
     http)
       uri="${uri##*data-web\=\'}"
