@@ -62,14 +62,16 @@ done
 check_key() {
   local k
   k="hib_bundle"
-  for v in "${!bundlekeys[@]}"; do
-    if [[ "${v}" == "${!k}" ]]; then
-      hib_key="${v}"
-      # check_bundle
-    else
-      error "${!k} was not found!"
-    fi
-  done
+  [[ -z "${!k}" ]] && {
+    verbose "ERROR" "hib_bundle is not specified.\n" \
+      "\tSpecify the bundle you would like to use with -b [bundle]"
+    exit 1
+  }
+    for v in "${!bundlekeys[@]}"; do
+      [[ "${v}" == "${!k}" ]]; then
+        hib_key="${v}"
+        # check_bundle
+    done
 }
 
 check_arch() {
@@ -95,13 +97,13 @@ check_arch() {
 
 check_dir() {
   local directory
-  directory="$1"
-  if [[ -d "${directory}" ]]; then
-    [[ -w "${directory}" ]] || {
-      verbose "WARNING" "${directory} does not exist or is not writable!"
+  directory="1"
+  if [[ -d "${!directory}" ]]; then
+    [[ -w "${!directory}" ]] || {
+      verbose "WARNING" "${!directory} does not exist or is not writable!"
       [[ "${automagic}" == "y" ]] && {
+        directory="${!directory}/humbleindiebundle"
         verbose "INFO""Using ${directory} instead..."
-        directory="${directory}/humbleindiebundle"
         mkdir -p "${directory}"
       }
     }
@@ -132,8 +134,13 @@ broken() {
 
 verbose() {
   [[ "${verbose}" == "y" ]] && {
-    local info="$1" mesg="$2"; shift 2
-    printf "==> $(gettext ${info}:) ${mesg}\n" "$@" >&2
+    local info="$1"; shift
+    declare -a mesg
+    for args in "$@"; do
+      mesg+="${args}"
+      shift
+    done
+    printf "==> "$(gettext "${info}:") ${mesg[@]}\n" "$@" >&2
   }
 }
 
