@@ -50,7 +50,8 @@ while getopts "a:b:cd:g:i:k:r:s:t:u:hnv:V" opt; do
       ;;
     i) install_dir="${OPTARG}"
       ;;
-    k) : ## specify a key manually
+    k) ## specify a key manually
+      hib_key="${OPTARG}"
       ;;
     n) : ## not implemented, maybe never will
       # interactive="y"
@@ -124,7 +125,6 @@ check_key() {
     for v in "${!bundlekeys[@]}"; do
       [[ "${v}" == "${!k}" ]] && {
         hib_key="${v}"
-        # check_bundle
       }
     done
 }
