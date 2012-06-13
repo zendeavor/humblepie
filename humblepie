@@ -69,6 +69,8 @@ while getopts "a:b:cd:g:i:k:t:hnvV" opt; do
   esac
 done
 
+[[ "${automagic}" == "y" ]] && verbose=y
+
 if [[ ${verbose} == "y" ]]; then
   verbose() {
       local info="$1"; shift
@@ -76,7 +78,7 @@ if [[ ${verbose} == "y" ]]; then
       for a in "$@"; do
         mesg+=("$a")
       done
-      printf "==> $(gettext "${info}: ${mesg[@]}")\n"
+      printf "%s%s\t%s\n" "==>" "$(gettext "${info}":)" "${mesg[@]}"
   } >&2
   broken() {
     :
@@ -120,6 +122,7 @@ check_arch() {
       }
     }
   else 
+    broken
     verbose "WARNING" "hib_arch has not been specified.\n" \
       "\tPlease set hib_arch in ${rcfile} " \
       "or specify it with -a [i386|i686|x86_64]"
@@ -131,17 +134,26 @@ check_arch() {
 }
 
 check_dir() {
-  local directory="$1"
+  directory="$1"
   if [[ -d "${directory}" ]]; then
     [[ -w "${directory}" ]] || {
+      broken
       verbose "WARNING" "${directory} does not exist or is not writable!"
       [[ "${automagic}" == "y" && -w "$PWD"]] && {
-        directory="$PWD/humbleindiebundle"
-        verbose "INFO" "Using ${directory} instead..."
-        mkdir -p "${directory}"
+        case "$1" in
+          hib_dir) hib_dir="$PWD/humbleindiebundle/"
+            verbose "INFO" "Using ${hib_dir} instead..."
+            directory="hib_dir"
+          hib_torrent_dir) hib_torrent_dir="$PWD/humbleindiebundle/torrents/"
+            verbose "INFO" "Using ${hib_torrent_dir} instead..."
+            directory="hib_torrent_dir"
+          *) verbose "ERROR" "$1 should only be hib_dir or hib_torrent_dir!"
+        esac
+        mkdir -p "${!directory}"
       }
     }
   else
+    broken
     verbose "WARNING" "No download directory specified.\n" \
       "\tUsing current directory instead..."
     directory="$PWD"
