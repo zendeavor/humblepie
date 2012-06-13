@@ -20,13 +20,15 @@ rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
 # -g [game]: which game to perform work on
 # -h: print usage
 # -i [dir]: install game into specified directory
-# -k [key]: set hib_ key
+# -k [key]: set hib_key
+# -s [time]: time, in minutes, to seed the torrent after download
 # -t [path]: directory where torrent files should exist
 # -v: verbosity
+# -V: print version
 # need something for specifying system to determine which download to grab
 # allow systemwide installs as root
 
-while getopts "a:b:cd:g:i:k:t:hnvV" opt; do
+while getopts "a:b:cd:g:i:k:s:t:hnvV" opt; do
   case "$opt" in
     a) ## check_arch will make sure i get a value i can work with
       hib_arch="${OPTARG}"
@@ -50,16 +52,20 @@ while getopts "a:b:cd:g:i:k:t:hnvV" opt; do
       ;;
     k) : ## specify a key manually
       ;;
-    n) interactive="y"
+    n) : ## not implemented, maybe never will
+      # interactive="y"
       ;;
     t) ## set the download type
       case "${OPTARG}" in
+        ## i can check for lots of binaries here, maybe. fuck that.
         t|torrent) dl_method="torrent"
           ;;
         h|http) dl_method="http"
           ;;
       esac
       ;;
+    s) seed_torrent="y"
+      seed_time="${OPTARG}"
     v) verbose="y"
       ;;
     V) : ## print version info
@@ -78,7 +84,7 @@ if [[ ${verbose} == "y" ]]; then
       for a in "$@"; do
         mesg+=("$a")
       done
-      printf "%s%s\t%s\n" "==>" "$(gettext "${info}":)" "${mesg[@]}"
+      printf "%s\t%s\n" "==> $(gettext "${info}":)" "${mesg[@]}"
   } >&2
   broken() {
     :
@@ -88,9 +94,11 @@ else
     :
   } &>/dev/null
   broken() {
-      echo "Something's wrong..."
-      echo "Try again with -v or set verbose=\"y\" in ${rcfile}"
-      exit 1
+    local info="$1"; shift
+    printf "%s\n\t%s\n" "==> Something is wrong..." \
+      "Try again with -v or set verbose=\"y\" in ${rcfile}\n" \
+      "PROBLEM: ${info[@]}" "$@"
+    exit 1
   } >&2
 fi
 
@@ -98,34 +106,36 @@ check_key() {
   local k
   k="hib_bundle"
   [[ -z "${!k}" ]] && {
-    broken
+    broken "No key found."
     verbose "ERROR" "hib_bundle is not specified.\n" \
       "\tSpecify the bundle you would like to use with -b [bundle]"
     exit 1
   }
     for v in "${!bundlekeys[@]}"; do
-      [[ "${v}" == "${!k}" ]]
+      [[ "${v}" == "${!k}" ]] && {
         hib_key="${v}"
         # check_bundle
+      }
     done
 }
 
 check_arch() {
   if [[ -n "${hib_arch}" ]]; then
     [[ "${hib_arch}" =~ "i.86" || "${hib_arch}" == "x86_64" ]] || {
-      broken
+      broken "Bad architecture."
       verbose "WARNING" "Invalid value for hib_arch.\n" \
-        "\tValid values are i386, i686, x86_64"
+        "\tValid values are i386, i686, x86_64" \
+        "\t\`uname -m\` should return the correct information."
       [[ "${automagic}" == "y" ]] && {
         hib_arch="$(uname -m)"
         verbose "INFO" "Using ${hib_arch} instead..."
       }
     }
   else 
-    broken
+    broken "Specify hib_arch."
     verbose "WARNING" "hib_arch has not been specified.\n" \
       "\tPlease set hib_arch in ${rcfile} " \
-      "or specify it with -a [i386|i686|x86_64]"
+      "or specify it with -a \`uname -m\`"
     [[ "${automagic}" == "y" ]] && {
       hib_arch="$(uname -m)"
       verbose "INFO" "Using ${hib_arch} instead..."
@@ -137,7 +147,7 @@ check_dir() {
   directory="$1"
   if [[ -d "${directory}" ]]; then
     [[ -w "${directory}" ]] || {
-      broken
+      broken "Bad directory."
       verbose "WARNING" "${directory} does not exist or is not writable!"
       [[ "${automagic}" == "y" && -w "$PWD"]] && {
         case "$1" in
@@ -164,7 +174,7 @@ _main() {
   check_arch "${hib_arch}"
   check_key "${hib_bundle}"
   check_dir "${hib_dir}"
-  [[ "${use_torrents}" == "y"  ]] && {
+  [[ "${dl_method}" == "torrent"  ]] && {
     check_dir "${hib_torrent_dir}"
   }
   sanitize_name
