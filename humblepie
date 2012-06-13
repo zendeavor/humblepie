@@ -220,7 +220,8 @@ dl_game() {
       [[ -f "${game}.part" ]] &&
         verbose "INFO" "Downloading ${hib_game}"
         curl -o "${hib_game}.part" "${http_dl_opts}" "${uri}"
-      mv "${hib_game}.part" "${hib_dir}" ;;
+      mv "${hib_game}.part" "${hib_dir}"
+      ;;
     *) 
       broken "No download method specified."
       verbose "ERROR" "Specify download method with -t [type]"
