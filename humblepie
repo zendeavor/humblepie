@@ -35,6 +35,7 @@ while getopts "vha:b:cd:g:i:k:t:" opt; do
       hib_bundle="hib_${OPTARG}_key"
       ;;
     c) check_sum="y"
+      ;;
     d) ## set the download/game dir
       hib_dir="${OPTARG}"
       ;;
@@ -42,15 +43,19 @@ while getopts "vha:b:cd:g:i:k:t:" opt; do
       ## for now, i plan to have another function that kicks off the rest
       hib_game="${OPTARG}"
       ;;
-    h) ## print usage
+    h\?) ## print usage
       ;;
     i) install_dir="${OPTARG}"
       ;;
     k) ## specify a key manually
       ;;
     t) ## set the .torrent dir
-      use_torrents=y
-      hib_torrent_dir="${OPTARG}"
+      case "${OPTARG}" in
+        t|torrent) dl_method="torrent"
+          ;;
+        h|http) dl_method="http"
+          ;;
+      esac
       ;;
     v) verbose="y"
       ;;
@@ -59,10 +64,34 @@ while getopts "vha:b:cd:g:i:k:t:" opt; do
   esac
 done
 
+if [[ ${verbose} == "y" ]]; then
+  verbose() {
+      local info="$1"; shift
+      declare -a mesg
+      for a in "$@"; do
+        mesg+=("$a")
+      done
+      printf "==> $(gettext "${info}: ${mesg[@]}")\n"
+  } >&2
+  broken() {
+    :
+  }
+else
+  verbose() {
+    : &>/dev/null
+  }
+  broken() {
+      echo "Something's wrong..."
+      echo "Try again with -v or set verbose=\"y\" in ${rcfile}"
+      exit 1
+  } >&2
+fi
+
 check_key() {
   local k
   k="hib_bundle"
   [[ -z "${!k}" ]] && {
+    broken
     verbose "ERROR" "hib_bundle is not specified.\n" \
       "\tSpecify the bundle you would like to use with -b [bundle]"
     exit 1
@@ -77,17 +106,18 @@ check_key() {
 check_arch() {
   if [[ -n "${hib_arch}" ]]; then
     [[ "${hib_arch}" =~ "i.86" || "${hib_arch}" == "x86_64" ]] || {
-        verbose "WARNING" "Invalid value for hib_arch.\n" \
-          "\tValid values are i386, i686, x86_64"
+      broken
+      verbose "WARNING" "Invalid value for hib_arch.\n" \
+        "\tValid values are i386, i686, x86_64"
       [[ "${automagic}" == "y" ]] && {
         verbose "INFO" "Using $(uname -m) instead..."
         hib_arch="$(uname -m)"
       }
     }
   else 
-      verbose "WARNING" "hib_arch has not been specified.\n" \
-        "Please set hib_arch in ${rcfile} " \
-        "or specify it with -a [i386, i686, x86_64]"
+    verbose "WARNING" "hib_arch has not been specified.\n" \
+      "Please set hib_arch in ${rcfile} " \
+      "or specify it with -a [i386, i686, x86_64]"
     [[ "${automagic}" == "y" ]] && {
       verbose "INFO" "Using $(uname -m) instead..."
       hib_arch="$(uname -m)"
@@ -96,14 +126,13 @@ check_arch() {
 }
 
 check_dir() {
-  local directory
-  directory="1"
-  if [[ -d "${!directory}" ]]; then
-    [[ -w "${!directory}" ]] || {
-      verbose "WARNING" "${!directory} does not exist or is not writable!"
+  local directory="$1"
+  if [[ -d "${directory}" ]]; then
+    [[ -w "${directory}" ]] || {
+      verbose "WARNING" "${directory} does not exist or is not writable!"
       [[ "${automagic}" == "y" ]] && {
         directory="$PWD/humbleindiebundle"
-        verbose "INFO""Using ${directory} instead..."
+        verbose "INFO" "Using ${directory} instead..."
         mkdir -p "${directory}"
       }
     }
@@ -112,36 +141,6 @@ check_dir() {
       "\tUsing current directory instead..."
     directory="$PWD"
   fi
-}
-
-# warning() {
-#   local mesg="$1"; shift
-#   printf "==> $(gettext "WARNING:") ${mesg}\n" "$@" >&2
-# }
-
-# error() {
-#   local mesg="$1"; shift
-#   printf "==> $(gettext "ERROR:") ${mesg}\n" "$@" >&2
-#   exit 1
-# }
-
-broken() {
-  [[ "${verbose}" != "y" ]] &&
-    echo "Something's wrong..."
-    echo "Try again with -v or set verbose=y in ${rcfile}"
-    exit 1
-}
-
-verbose() {
-  [[ "${verbose}" == "y" ]] && {
-    local info="$1"; shift
-    declare -a mesg
-    for a in "$@"; do
-      mesg+=("$a")
-      shift
-    done
-    printf "==> $(gettext "${info}:") ${mesg[@]}\n" "$@" >&2
-  }
 }
 
 _main() {
