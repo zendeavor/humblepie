@@ -26,7 +26,7 @@ rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
 # need something for specifying system to determine which download to grab
 # allow systemwide installs as root
 
-while getopts "vha:b:cd:g:i:k:t:" opt; do
+while getopts "a:b:cd:g:i:k:t:hnvV" opt; do
   case "$opt" in
     a) ## check_arch will make sure i get a value i can work with
       hib_arch="${OPTARG}"
@@ -34,7 +34,8 @@ while getopts "vha:b:cd:g:i:k:t:" opt; do
     b) ## check_key should successfully verify that keys match
       hib_bundle="hib_${OPTARG}_key"
       ;;
-    c) check_sum="y"
+    c) ## check_game should verify md5, not implemented
+      check_sum="y"
       ;;
     d) ## set the download/game dir
       hib_dir="${OPTARG}"
@@ -43,13 +44,15 @@ while getopts "vha:b:cd:g:i:k:t:" opt; do
       ## for now, i plan to have another function that kicks off the rest
       hib_game="${OPTARG}"
       ;;
-    h\?) ## print usage
+    h\?) : ## print usage
       ;;
     i) install_dir="${OPTARG}"
       ;;
-    k) ## specify a key manually
+    k) : ## specify a key manually
       ;;
-    t) ## set the .torrent dir
+    n) interactive="y"
+      ;;
+    t) ## set the download type
       case "${OPTARG}" in
         t|torrent) dl_method="torrent"
           ;;
@@ -58,6 +61,8 @@ while getopts "vha:b:cd:g:i:k:t:" opt; do
       esac
       ;;
     v) verbose="y"
+      ;;
+    V) : ## print version info
       ;;
     x) automagic="y"
       ;;
@@ -75,11 +80,11 @@ if [[ ${verbose} == "y" ]]; then
   } >&2
   broken() {
     :
-  }
+  } &>/dev/null
 else
   verbose() {
-    : &>/dev/null
-  }
+    :
+  } &>/dev/null
   broken() {
       echo "Something's wrong..."
       echo "Try again with -v or set verbose=\"y\" in ${rcfile}"
@@ -97,7 +102,7 @@ check_key() {
     exit 1
   }
     for v in "${!bundlekeys[@]}"; do
-      [[ "${v}" == "${!k}" ]]; then
+      [[ "${v}" == "${!k}" ]]
         hib_key="${v}"
         # check_bundle
     done
@@ -110,17 +115,17 @@ check_arch() {
       verbose "WARNING" "Invalid value for hib_arch.\n" \
         "\tValid values are i386, i686, x86_64"
       [[ "${automagic}" == "y" ]] && {
-        verbose "INFO" "Using $(uname -m) instead..."
         hib_arch="$(uname -m)"
+        verbose "INFO" "Using ${hib_arch} instead..."
       }
     }
   else 
     verbose "WARNING" "hib_arch has not been specified.\n" \
-      "Please set hib_arch in ${rcfile} " \
-      "or specify it with -a [i386, i686, x86_64]"
+      "\tPlease set hib_arch in ${rcfile} " \
+      "or specify it with -a [i386|i686|x86_64]"
     [[ "${automagic}" == "y" ]] && {
-      verbose "INFO" "Using $(uname -m) instead..."
       hib_arch="$(uname -m)"
+      verbose "INFO" "Using ${hib_arch} instead..."
     }
   fi
 }
@@ -130,7 +135,7 @@ check_dir() {
   if [[ -d "${directory}" ]]; then
     [[ -w "${directory}" ]] || {
       verbose "WARNING" "${directory} does not exist or is not writable!"
-      [[ "${automagic}" == "y" ]] && {
+      [[ "${automagic}" == "y" && -w "$PWD"]] && {
         directory="$PWD/humbleindiebundle"
         verbose "INFO" "Using ${directory} instead..."
         mkdir -p "${directory}"
@@ -144,30 +149,32 @@ check_dir() {
 }
 
 _main() {
-  check_arch
+  check_arch "${hib_arch}"
   check_key "${hib_bundle}"
   check_dir "${hib_dir}"
   [[ "${use_torrents}" == "y"  ]] && {
     check_dir "${hib_torrent_dir}"
   }
+  sanitize_name
 }
 
-# check_bundle() {
+# sanitize_name() {
 #   case "${hib_key}" in
+#     ## use this to loop through the bundle arrays and start fuckin' shit up
 #     ## set my important values to variables and kick to the downloader
-#     hib_1key) hib_1;;
-#     hib_2key) hib_2;;
-#     hib_3key) hib_3;;
-#     hib_4key) hib_4;;
-#     hib_5key) hib_5;;
-#     hib_android1key) hib_android1;;
-#     hib_android2key) hib_android2;;
-#     hib_botaniculakey) hib_botanicula;;
-#     hib_frozenbytekey) hib_frozenbyte;;
-#     hib_frozensynapsekey) hib_frozensynapse;;
-#     hib_introversionkey) hib_introversion;;
-#     hib_mojamkey) hib_mojam;;
-#     hib_voxatronkey) hib_voxatron;;
+#     hib_1_key) hib_1;;
+#     hib_2_key) hib_2;;
+#     hib_3_key) hib_3;;
+#     hib_4_key) hib_4;;
+#     hib_5_key) hib_5;;
+#     hib_android1_key) hib_android1;;
+#     hib_android2_key) hib_android2;;
+#     hib_botanicula_key) hib_botanicula;;
+#     hib_frozenbyte_key) hib_frozenbyte;;
+#     hib_frozensynapse_key) hib_frozensynapse;;
+#     hib_introversion_key) hib_introversion;;
+#     hib_mojam_key) hib_mojam;;
+#     hib_voxatron_key) hib_voxatron;;
 #   esac
 # }
 
