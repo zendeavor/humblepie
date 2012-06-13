@@ -1,39 +1,5 @@
 #!/usr/bin/env bash
 ## test functions i probably don't want
-_dlgame() {
-  local uri
-  uri="$(curl -s http://www.humblebundle.com/downloads?key="${!hibkey}" \
-    | grep "${hibgame}")"
-  echo "  1. Torrent with aria2c"
-  echo "  2. HTTP with curl"
-
-  echo -n "Choose download method: "
-  read -a method
-  case "${method}" in
-    1)
-      if [[ -x "$(type -p aria2c)" ]]; then
-        uri="${uri##*data-bt\=\'}"
-        uri="${uri%%\'*}" 
-        echo "To resume this download later run:"
-        echo "\`aria2c ${pkg}.torrent\`"
-        [[ ! -f "${pkg}.torrent" ]] &&
-          curl -o "${pkg}.torrent" "${uri}"
-        aria2c "${pkg}.torrent" --seed-time=0
-        mv "${pkg}.torrent" "${hibtorr}"
-      else
-        echo "aria2c executable not found! Please install aria2."
-      fi
-    } ;;
-  2)
-    uri="${uri##*data-web\=\'}"
-    uri="${uri%%\'*}" 
-    [[ -f "${hibgame}.part" ]] &&
-      curl -o "${hibgame}.part" "${uri}"
-    mv "${hibgame}.part" "${hibgame}" ;;
-  *) echo "Please choose option 1 or 2." ;;
-  esac
-}
-
 gamever() {
   for _key in "${hibgames[@]}"; do
     case "${_key}" in

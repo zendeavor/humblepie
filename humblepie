@@ -22,13 +22,12 @@ rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
 # -i [dir]: install game into specified directory
 # -k [key]: set hib_key
 # -s [time]: time, in minutes, to seed the torrent after download
-# -t [path]: directory where torrent files should exist
+# -T [path]: directory where torrent files should exist
 # -v: verbosity
 # -V: print version
 # need something for specifying system to determine which download to grab
-# allow systemwide installs as root
 
-while getopts "a:b:cd:g:i:k:r:s:t:u:hnv:V" opt; do
+while getopts "a:b:cd:g:i:k:o:r:T:u:hnv:V" opt; do
   case "$opt" in
     a) ## check_arch will make sure i get a value i can work with
       hib_arch="${OPTARG}"
@@ -48,20 +47,13 @@ while getopts "a:b:cd:g:i:k:r:s:t:u:hnv:V" opt; do
       ;;
     h\?) : ## print usage
       ;;
-    i) install_dir="${OPTARG}"
+    i) ## not implemented
+      # install_dir="${OPTARG}"
       ;;
     k) ## specify a key manually
       hib_key="${OPTARG}"
       ;;
-    n) : ## not implemented, maybe never will
-      # interactive="y"
-      ;;
-    r|u) ## uninstall the game; essentially, just rm -rf the install dir
-      # which means i need some way to FIND the install dir if not in rcfile
-      ;;
-    s) seed_torrent="y"
-      seed_time="${OPTARG}"
-    t) ## set the download type
+    m) ## set download method
       case "${OPTARG}" in
         ## i can check for lots of binaries here, maybe. fuck that.
         t|torrent) dl_method="torrent"
@@ -70,14 +62,31 @@ while getopts "a:b:cd:g:i:k:r:s:t:u:hnv:V" opt; do
           ;;
       esac
       ;;
-    v) 
-      [[ "${OPTARG}" != "no" ]] ||
+    n) : ## not implemented, maybe never will
+      # interactive="y"
+      ;;
+    o) ## set options for torrent_program; these MUST be quoted
+      case "${dl_method}" in
+        torrent) dl_opts="${OPTARG}"
+          ;;
+        http) dl_opts="${OPTARG}"
+          ;;
+      esac
+      ;;
+    r|u) : ## uninstall the game; essentially, just rm -rf the install dir
+      # which means i need some way to FIND the install dir if not in rcfile
+      ;;
+    T) ## set the hib_torrent_dir
+      hib_torrent_dir="${OPTARG}"
+      ;;
+    v) ## enable verbosity
+      [[ "${OPTARG}" != "no" ]] &&
         verbose="y"
       ;;
     V) : ## print version info
       ;;
     x) 
-      [[ "${OPTARG}" != "no" ]] ||
+      [[ "${OPTARG}" != "no" ]] &&
         automagic="y"
       ;;
   esac
@@ -187,6 +196,40 @@ check_dir() {
   fi
 }
 
+dl_game() {
+  local uri
+  uri="$(curl -s http://www.humblebundle.com/downloads?key="${!hibkey}" \
+    | grep "${game}")"
+  case "${dl_method}" in
+    torrent)
+      if [[ -x "$(type -p aria2c)" ]]; then
+        uri="${uri##*data-bt\=\'}"
+        uri="${uri%%\'*}" 
+        echo "To resume this download later run:"
+        echo "\`${torrent_bin} ${dl_opts} ${game}.torrent\`"
+        [[ ! -f "${game}.torrent" ]] && {
+          curl -o "${game}.torrent" "${uri}"
+        mv "${game}.torrent" "${hib_torrent_dir}"
+        }
+        (cd "${hib_torrent_dir}" &&
+          "${torrent_bin}" "${dl_opts}" "${game}.torrent")
+      else
+        echo "${torrent_bin} executable not found! Please install aria2."
+      fi
+        ;;
+    http)
+      uri="${uri##*data-web\=\'}"
+      uri="${uri%%\'*}" 
+      [[ -f "${game}.part" ]] &&
+        curl -o "${game}.part" "${http_dl_opts}" "${uri}"
+      mv "${game}.part" "${hib_dir}" ;;
+    *) 
+      broken "No download method specified."
+      verbose "ERROR" "Specify download method with -t [type]"
+      exit 1
+  esac
+}
+
 _main() {
   check_arch "${hib_arch}"
   check_key "${hib_bundle}"
@@ -197,14 +240,16 @@ _main() {
   # sanitize_name
 }
 
-if (( EUID = 0 )); then
+[[ (( EUID = 0 )) ]] && {
   printf "%s%s\n\t%s"  "You are running this script as root! " \
     "This is potentially dangerous!" \
     "Continue? (y/N): "
-  read -r _root
-  [[ ${_root} =~ "[yY]??" ]] && main
-else main
-fi
+  read -r _rootuser
+  [[ ${_rootuser} =~ "[yY]??" ]] && {
+  main
+  exit
+  }
+}
 
 # sanitize_name() {
 #   case "${hib_key}" in
