@@ -37,7 +37,7 @@ while getopts "a:b:d:g:i:k:o:r:t:u:U:v:chIV" opt; do
       ;;
     c) ## check_game should verify md5, not implemented
       check_sum="y"
-      game_checksum="${OPTARG}"
+      hib_game="${OPTARG}"
 
       ;;
     d) ## set the download/game dir
@@ -201,6 +201,8 @@ dl_game() {
   local uri
   # uri="$(curl -s http://www.humblebundle.com/downloads?key="${!hib_key}" \
   #   | grep "${game}")"
+  uri="http://www.humblebundle.com/downloads?key=${!hib_key}"
+  uri="${uri##*$hib_game}"
   case "${dl_method}" in
     torrent)
       [[ -x "$(type -p ${torrent_bin})" ]] || {
@@ -209,7 +211,6 @@ dl_game() {
           "Please install ${torrent_bin}."
         exit 1
       }
-        uri="http://www.humblebundle.com/downloads?key=${!hib_key}"
         uri="${uri##*data-bt\=\'}"
         uri="${uri%%\'*}" 
         verbose "INFO" "To resume this download later run:" \
@@ -234,6 +235,7 @@ dl_game() {
 }
 
 check_sum(){
+  local g="$1"
   [[ "${check_sum}" == "y" ]] && {
     hib_game_md5sum="$(md5sum "${hib_game}")"
     [[ "${hib_game_md5sum}" == "${hib_md5[$hib_game]" ]] || {
@@ -250,7 +252,7 @@ main() {
   [[ "${dl_method}" == "torrent"  ]] && {
     check_dir "${hib_torrent_dir}"
   }
-  sanitize_name "${hib_game}"
+  # sanitize_name "${hib_game}"
   dl_game "${hib_game}"
   check_sum "${hib_game}"
 }
