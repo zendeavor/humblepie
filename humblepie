@@ -7,24 +7,10 @@
 ###############################################################################
 ## covered bundles:
 ##  4, 5, frozensynapse, introversion(maybe?)
+## kevlarman has 2 more bundles
 rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
 [[ -f "${rcfile}" ]] && . "${rcfile}"
 
-
-## options
-# -a [architecture]: 32, 64
-# -b [bundle]: which bundle to use
-# -c: check_sum the game, optional
-# -d [path]: directory where game should exist
-# -g [game]: which game to perform work on
-# -h: print usage
-# -i [dir]: install game into specified directory
-# -k [key]: set hib_key
-# -s [time]: time, in minutes, to seed the torrent after download
-# -t [path]: directory where torrent files should exist
-# -v: verbosity
-# -V: print version
-# need something for specifying system to determine which download to grab
 
 OPTIND=1
 while getopts "a:b:d:g:i:k:o:r:t:u:U:v:chIV" opt; do
@@ -37,8 +23,11 @@ while getopts "a:b:d:g:i:k:o:r:t:u:U:v:chIV" opt; do
       ;;
     c) ## check_game should verify md5, not implemented
       check_sum="y"
-      hib_game="${OPTARG}"
-
+      [[ -n "${OPTARG}" ]] && {
+        sanitize_name "${OPTARG}"
+        check_sum "${hib_game}"
+        exit 0
+      }
       ;;
     d) ## set the download/game dir
       hib_dir="${OPTARG}"
@@ -55,7 +44,7 @@ while getopts "a:b:d:g:i:k:o:r:t:u:U:v:chIV" opt; do
     I) : ## not implemented, maybe never will but seems simplish
       # interactive="y"
       ;;
-    k) ## specify a key manually
+    k) ## specify a key manually, not implemented
       hib_key="${OPTARG}"
       ;;
     m) ## set download method
@@ -125,6 +114,7 @@ else
 fi
 
 check_key() {
+  ## this needs to be opened up a bit to check keys manually specified on cli
   local k="${!hib_bundle}"
   [[ -z "${!k}" ]] && {
     broken "Unspecified key."
@@ -216,17 +206,21 @@ dl_game() {
         verbose "INFO" "To resume this download later run:" \
           "\`${torrent_bin} ${dl_opts} ${game}.torrent\`"
         [[ ! -f "${hib_torrent_dir}/${game}.torrent" ]] && {
+          verbose "INFO" "Downloading ${hib_game}.torrent."
           curl -o "${hib_torrent_dir}/${game}.torrent" "${uri}"
         }
-        (cd "${hib_torrent_dir}" &&
-          "${torrent_bin}" "${dl_opts}" "${game}.torrent")
+        (cd "${hib_torrent_dir}" && {
+          verbose "INFO" "Downloading ${hib_game}."
+          "${torrent_bin}" "${dl_opts}" "${game}.torrent"
+        })
         ;;
     http)
       uri="${uri##*data-web\=\'}"
       uri="${uri%%\'*}" 
       [[ -f "${game}.part" ]] &&
-        curl -o "${game}.part" "${http_dl_opts}" "${uri}"
-      mv "${game}.part" "${hib_dir}" ;;
+        verbose "INFO" "Downloading ${hib_game}"
+        curl -o "${hib_game}.part" "${http_dl_opts}" "${uri}"
+      mv "${hib_game}.part" "${hib_dir}" ;;
     *) 
       broken "No download method specified."
       verbose "ERROR" "Specify download method with -t [type]"
@@ -242,6 +236,8 @@ check_sum(){
       broken "MD5 did not match."
       verbose "ERROR" "${hib_game_md5sum} does not match ${hib_md5[$hib_game]}"
     }
+    verbose "INFO" "${hib_game_md5sum} == ${hib_md5[$hib_game]}"
+    verbose "INFO" "MD5 for ${hib_game} was correct."
   }
 }
 
