@@ -28,7 +28,7 @@ rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
 # need something for specifying system to determine which download to grab
 # allow systemwide installs as root
 
-while getopts "a:b:cd:g:i:k:s:t:hnvV" opt; do
+while getopts "a:b:cd:g:i:k:r:s:t:u:hnv:V" opt; do
   case "$opt" in
     a) ## check_arch will make sure i get a value i can work with
       hib_arch="${OPTARG}"
@@ -43,7 +43,7 @@ while getopts "a:b:cd:g:i:k:s:t:hnvV" opt; do
       hib_dir="${OPTARG}"
       ;;
     g) ## this should just store the game name
-      ## for now, i plan to have another function that kicks off the rest
+      # for now, i plan to have another function that kicks off the rest
       hib_game="${OPTARG}"
       ;;
     h\?) : ## print usage
@@ -55,6 +55,11 @@ while getopts "a:b:cd:g:i:k:s:t:hnvV" opt; do
     n) : ## not implemented, maybe never will
       # interactive="y"
       ;;
+    r|u) ## uninstall the game; essentially, just rm -rf the install dir
+      # which means i need some way to FIND the install dir if not in rcfile
+      ;;
+    s) seed_torrent="y"
+      seed_time="${OPTARG}"
     t) ## set the download type
       case "${OPTARG}" in
         ## i can check for lots of binaries here, maybe. fuck that.
@@ -64,13 +69,15 @@ while getopts "a:b:cd:g:i:k:s:t:hnvV" opt; do
           ;;
       esac
       ;;
-    s) seed_torrent="y"
-      seed_time="${OPTARG}"
-    v) verbose="y"
+    v) 
+      [[ "${OPTARG}" != "no" ]] ||
+        verbose="y"
       ;;
     V) : ## print version info
       ;;
-    x) automagic="y"
+    x) 
+      [[ "${OPTARG}" != "no" ]] ||
+        automagic="y"
       ;;
   esac
 done
@@ -78,6 +85,10 @@ done
 [[ "${automagic}" == "y" ]] && verbose=y
 
 if [[ ${verbose} == "y" ]]; then
+  printf "%s\n%s\n%s\n" "Verbose reporting is on!" \
+    "Run this program again with -x no and -v no to turn it off." \
+    "Alternatively, use ${rcfile} to pre-configure all settings"
+
   verbose() {
       local info="$1"; shift
       declare -a mesg
@@ -96,17 +107,16 @@ else
   broken() {
     local info="$1"; shift
     printf "%s\n\t%s\n" "==> Something is wrong..." \
-      "Try again with -v or set verbose=\"y\" in ${rcfile}\n" \
+      "Try again with -v\n" \
       "PROBLEM: ${info[@]}" "$@"
     exit 1
   } >&2
 fi
 
 check_key() {
-  local k
-  k="hib_bundle"
+  local k="${!hib_bundle}"
   [[ -z "${!k}" ]] && {
-    broken "No key found."
+    broken "Unspecified key."
     verbose "ERROR" "hib_bundle is not specified.\n" \
       "\tSpecify the bundle you would like to use with -b [bundle]"
     exit 1
@@ -132,10 +142,9 @@ check_arch() {
       }
     }
   else 
-    broken "Specify hib_arch."
-    verbose "WARNING" "hib_arch has not been specified.\n" \
-      "\tPlease set hib_arch in ${rcfile} " \
-      "or specify it with -a \`uname -m\`"
+    broken "Unspecified architecture."
+    verbose "WARNING" "Architecture has not been specified.\n" \
+      "\tPlease specify it with -a \`uname -m\`"
     [[ "${automagic}" == "y" ]] && {
       hib_arch="$(uname -m)"
       verbose "INFO" "Using ${hib_arch} instead..."
@@ -144,26 +153,34 @@ check_arch() {
 }
 
 check_dir() {
-  directory="$1"
-  if [[ -d "${directory}" ]]; then
-    [[ -w "${directory}" ]] || {
+  d="$1"
+  if [[ -d "${d}" ]]; then
+    [[ -w "${d}" ]] || {
       broken "Bad directory."
-      verbose "WARNING" "${directory} does not exist or is not writable!"
+      verbose "ERROR" "${d} does not exist or is not writable!"
+      exit 1
       [[ "${automagic}" == "y" && -w "$PWD"]] && {
-        case "$1" in
-          hib_dir) hib_dir="$PWD/humbleindiebundle/"
+        case "${d}" in
+          hib_dir)
+            hib_dir="$PWD/humbleindiebundle/"
             verbose "INFO" "Using ${hib_dir} instead..."
-            directory="hib_dir"
-          hib_torrent_dir) hib_torrent_dir="$PWD/humbleindiebundle/torrents/"
+            d="hib_dir"
+            ;;
+          hib_torrent_dir)
+            hib_torrent_dir="$PWD/humbleindiebundle/torrents/"
             verbose "INFO" "Using ${hib_torrent_dir} instead..."
-            directory="hib_torrent_dir"
-          *) verbose "ERROR" "$1 should only be hib_dir or hib_torrent_dir!"
+            d="hib_torrent_dir"
+            ;;
+          *)
+            verbose "ERROR" "$1 should only be hib_dir or hib_torrent_dir!"
+            exit 1
+            ;;
         esac
-        mkdir -p "${!directory}"
+        mkdir -p "${!d}"
       }
     }
   else
-    broken
+    broken "Unspecified directory."
     verbose "WARNING" "No download directory specified.\n" \
       "\tUsing current directory instead..."
     directory="$PWD"
@@ -177,8 +194,17 @@ _main() {
   [[ "${dl_method}" == "torrent"  ]] && {
     check_dir "${hib_torrent_dir}"
   }
-  sanitize_name
+  # sanitize_name
 }
+
+if (( EUID = 0 )); then
+  printf "%s%s\n\t%s"  "You are running this script as root! " \
+    "This is potentially dangerous!" \
+    "Continue? (y/N): "
+  read -r _root
+  [[ ${_root} =~ "[yY]??" ]] && main
+else main
+fi
 
 # sanitize_name() {
 #   case "${hib_key}" in
