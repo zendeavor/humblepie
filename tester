@@ -3,11 +3,12 @@
 # set -x
 
 . ./humblepie.rc
-for var in "${!hibkey_*}"; do
+declare -A bundlekeys
+for var in ${!hibkey_*}; do
   if [[ -n "$var" ]]; then 
-    echo "$var"
-    echo "${!var}"
-    # bundlekeys+=( ["$var"]="${!var}" ) 
+    # echo "$var"
+    # echo "${!var}"
+    bundlekeys+=( ["$var"]="${!var}" ) 
     # verbose "INFO" "Key for $var found."
   else :
     # broken "No keys discovered."
