@@ -60,7 +60,7 @@ if (( ! verbose )); then
     printf "%s\t%s\n" "==> $(gettext "$info": "$@")"
   } >&2
   ## probably unnecessary to do
-  broken() { : } &>/dev/null
+  broken() { false } &>/dev/null
 else
   broken() {
     ## broken() always returns 1 because we _probably_ want to exit 
@@ -70,33 +70,34 @@ else
     return 1
   } >&2
   ## again, likely unnecessary
-  verbose() { : } &>/dev/null
+  verbose() { false } &>/dev/null
 fi
 
 check_key() {
   ## grab the key
-  local k="$1" ret=0
+  # local k="$1" ret=0
+  ## declare my array for keys
+  declare -a bundlekeys
   ## if no key, cry
-  [[ -z "$k" ]] && {
-    broken "Unspecified key."
-    verbose "ERROR" "hib_bundle is not specified.\n" \
-      "\tSpecify the bundle you would like to use with -b [bundle]"
-    ret=1
-  }
-  for val in "${!hib_*}"; do
-    [[ -n "$val" ]] && {
-    bundlekeys+=("$val"); return
-    }
+  for var in "${!hibkey_*}"; do
+    if [[ -n "$var" ]]; then 
+      bundlekeys+=("$var") 
+      verbose "INFO" "Key for $var found."
+    else 
+      broken "No keys discovered."
+      verbose "ERROR" "No keys configured.\n" \
+        "Please specify a key with -k [key] or in your user's config file."
+    fi
   done
   ## now loop through the keys and when a match is found, set hib_key
   ## only 1 key can be specified at a time
   ## only 1 match is ever possible
-  for v in "${bundlekeys[@]}"; do
-    [[ "$v" == "$k" ]] && {
-      hib_key="$v"; return
-    }
-    ## this return only occurs if no keys match
-    ret=2; done; return $ret
+  # for val in "${!bundlekeys[@]}"; do
+  #   [[ "$val" == "$k" ]] && {
+  #     hib_key="$val"; return
+  #   }
+  #   ## this return only occurs if no keys match
+  #   ret=2; done; return $ret
 }
 
 inarray() {
@@ -122,7 +123,7 @@ check_arch() {
       ## probably similar to the way we do verbose
 
       ## if automagic is on, set hib_arch to something i expect
-      if (( automagic )); then
+      if (( ! automagic )); then
         hib_arch="$(uname -m)"
         verbose "INFO" "Using $hib_arch instead..."
       fi
@@ -134,7 +135,7 @@ check_arch() {
       "\tPlease specify it with -a \`uname -m\`"
 
     ## but i can still try to set it to something sane
-    if (( automagic )); then
+    if (( ! automagic )); then
       hib_arch="$(uname -m)"
       verbose "INFO" "Using $hib_arch instead..."
     else return 2
@@ -153,7 +154,7 @@ check_dir() {
       broken "Bad directory."
       verbose "ERROR" "$d does not exist or is not writable!"
       ##if automagic, and current dir is writable, use it
-      if (( automagic )) && [[ -r "$PWD" &&  -w "$PWD"]]; then
+      if (( ! automagic )) && [[ -r "$PWD" &&  -w "$PWD"]]; then
 
         ## TODO: does this need to be a case?
 
