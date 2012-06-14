@@ -225,6 +225,42 @@ dl_game() {
   esac
 }
 
+download_file() {
+  # download command
+  local dlcmd=$1
+  # URL of the file
+  local url=$2
+  # destination file
+  local file=$3
+  # temporary download file, default to last component of the URL
+  local dlfile="${url##*/}"
+
+  # replace %o by the temporary dlfile if it exists
+  if [[ $dlcmd = *%o* ]]; then
+    dlcmd=${dlcmd//\%o/\"$file.part\"}
+    dlfile="$file.part"
+  fi
+  # add the URL, either in place of %u or at the end
+  if [[ $dlcmd = *%u* ]]; then
+    dlcmd=${dlcmd//\%u/\"$url\"}
+  else
+    dlcmd="$dlcmd \"$url\""
+  fi
+
+  local ret=0
+  eval "$dlcmd || ret=\$?"
+  if (( ret )); then
+    [[ ! -s $dlfile ]] && rm -f -- "$dlfile"
+    return $ret
+  fi
+
+  # rename the temporary download file to the final destination
+  if [[ $dlfile != "$file" ]]; then
+    mv -f "$SRCDEST/$dlfile" "$SRCDEST/$file"
+  fi
+}
+
+
 check_sum() {
   ## verify how to use md5sum properly to prevent printing filename or `-'
   local g="$1"
