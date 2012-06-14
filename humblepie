@@ -192,7 +192,8 @@ get_list() {
   ## clobber this file, the old version is always useless
 
   ## quick and dirty way to grab a complete list of files
-  lynx -dump http://www.humblebundle.com/downloads?key="$k" |
+  links -html-numbered-links 1 \
+    -dump http://www.humblebundle.com/downloads?key="$k" |
     grep files|grep -v webseed|cut -d'/' -f4|cut -d'?' -f1>"$k.txt"
 }
 
