@@ -14,12 +14,16 @@ if (( EUID == 0 )); then
     "This is potentially dangerous!" \
     "Continue? (y/N): "
   read -r rootreply
-  [[ "$rootreply" =~ "[yY]??" ]] && [[ ! -f "$rcfile" ]] && 
-    rchome="/etc/humblepie"
+  [[ "$rootreply" =~ "[yY]??" ]] &&
+   ## if they want to continue, test for $rcfile
+    [[ ! -f "$rcfile" ]] && 
+    ## if it's not there, we're going to use /etc instead
+    ## they're already root at this point, so further checking is moot
+      rchome="/etc/humblepie"
 fi
 
 rcfile="$rchome/humblepie.rc"
-[[ ! -d "$rchome" ]] || mkdir -p "$rchome"
+[[ -d "$rchome" ]] || mkdir -p "$rchome"
 if [[ -r "$rcfile" ]]; then
   . "$rcfile"
 elif [[ -f "$rcfile" ]]; then
@@ -60,15 +64,18 @@ fi
 check_key() {
   ## this needs to be opened up a bit to check keys manually specified on cli
   ## probably just accept $1, in fact that's what i'll do now
-  ## so send "${!hib_bundle}" instead and check
+  ## so send "${!hib_bundle}" or the key from cli
+  ## TODO: now figure out why i am verifying a key from cli
+  ## those should only be specified because not in config yet
   # local k="${!hib_bundle}"
   local k="$1"
-  local ret=1
+  local ret=0
   ## verify a key was sent, if empty cry about it
   [[ -z "$k" ]] && {
     broken "Unspecified key."
     verbose "ERROR" "hib_bundle is not specified.\n" \
       "\tSpecify the bundle you would like to use with -b [bundle]"
+    ret=1
   }
   ## now loop through the keys and when a match is found, set hib_key
   ## only 1 key can be specified at a time
@@ -79,6 +86,7 @@ check_key() {
       ## i break just to end the loop as early as possible
       break
     }
+    ret=2
   done
 }
 
@@ -145,7 +153,7 @@ check_dir() {
             ;;
           *)
             verbose "ERROR" "$d should only be hib_dir or hib_torrent_dir!"
-            exit 1
+            return 1
             ;;
         esac
         mkdir -p "${!d}"
@@ -161,45 +169,6 @@ check_dir() {
 
     directory="$PWD"
   fi
-}
-
-dl_game() {
-  local uri
-  # uri="$(curl -s http://www.humblebundle.com/downloads?key="${!hib_key}" \
-  #   | grep "${game}")"
-  case "$dl_http" in
-    # torrent)
-    #   [[ -x "$(type -p ${torrent_bin})" ]] || {
-    #     broken "${torrent_bin} not found."
-    #     verbose "ERROR" "${torrent_bin} executable not found!" \
-    #       "Please install ${torrent_bin}."
-    #     exit 1
-    #   }
-    #     uri="${uri##*data-bt\=\'}"
-    #     uri="${uri%%\'*}" 
-    #     verbose "INFO" "To resume this download later run:" \
-    #       "\`${torrent_bin} ${dl_opts} ${game}.torrent\`"
-    #     [[ ! -f "${hib_torrent_dir}/${game}.torrent" ]] && {
-    #       verbose "INFO" "Downloading ${hib_game}.torrent."
-    #       curl -o "${hib_torrent_dir}/${game}.torrent" "${uri}"
-    #     }
-    #     (cd "${hib_torrent_dir}" && {
-    #       verbose "INFO" "Downloading ${hib_game}."
-    #       "${torrent_bin}" "${dl_opts}" "${game}.torrent"
-    #     })
-    #     ;;
-    http)
-      uri="http://files.humblebundle.com/$hib_game?key=$hib_key"
-      [[ -f "$hib_dir/$hib_game.part" ]] && {
-        verbose "INFO" "Downloading $hib_game"
-        curl -o "$hib_dir/$hib_game.part" "$curl_dl_opts" "$uri"
-      }
-      ;;
-    *) 
-      broken "No download method specified."
-      verbose "ERROR" "Specify download method with -t [type]"
-      exit 1
-  esac
 }
 
 get_uri() {
@@ -282,39 +251,5 @@ check_sum() {
     verbose "INFO" "MD5 for $g was correct."
   fi
 }
-
-# main() {
-#   check_arch "$hib_arch"
-#   check_key "$hib_bundle"
-#   check_dir "$hib_dir"
-  # [[ "$dl_http" == "torrent"  ]] && {
-  #   check_dir "$hib_torrent_dir"
-  # }
-  # sanitize_name "${hib_game}"
-  # dl_game "${dl_cmd}" "${uri}" "${hib_game}"
-  # check_sum "${hib_game}"
-# }
-
-# main
-
-# sanitize_name() {
-#   case "${hib_key}" in
-#     ## use this to loop through the bundle arrays and start fuckin' shit up
-#     ## set my important values to variables and kick to the downloader
-#     hib_1_key) hib_1;;
-#     hib_2_key) hib_2;;
-#     hib_3_key) hib_3;;
-#     hib_4_key) hib_4;;
-#     hib_5_key) hib_5;;
-#     hib_android1_key) hib_android1;;
-#     hib_android2_key) hib_android2;;
-#     hib_botanicula_key) hib_botanicula;;
-#     hib_frozenbyte_key) hib_frozenbyte;;
-#     hib_frozensynapse_key) hib_frozensynapse;;
-#     hib_introversion_key) hib_introversion;;
-#     hib_mojam_key) hib_mojam;;
-#     hib_voxatron_key) hib_voxatron;;
-#   esac
-# }
 
 # vim: ft=sh sw=2 sts=2 et

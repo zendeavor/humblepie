@@ -140,6 +140,38 @@ _checkgame() {
   }
 }
 
+main() {
+  check_arch "$hib_arch"
+  check_key "$hib_bundle"
+  check_dir "$hib_dir"
+  [[ "$dl_http" == "torrent"  ]] && {
+    check_dir "$hib_torrent_dir"
+  }
+  sanitize_name "${hib_game}"
+  dl_game "${dl_cmd}" "${uri}" "${hib_game}"
+  check_sum "${hib_game}"
+}
+
+sanitize_name() {
+  case "${hib_key}" in
+    ## use this to loop through the bundle arrays and start fuckin' shit up
+    ## set my important values to variables and kick to the downloader
+    hib_1_key) hib_1;;
+    hib_2_key) hib_2;;
+    hib_3_key) hib_3;;
+    hib_4_key) hib_4;;
+    hib_5_key) hib_5;;
+    hib_android1_key) hib_android1;;
+    hib_android2_key) hib_android2;;
+    hib_botanicula_key) hib_botanicula;;
+    hib_frozenbyte_key) hib_frozenbyte;;
+    hib_frozensynapse_key) hib_frozensynapse;;
+    hib_introversion_key) hib_introversion;;
+    hib_mojam_key) hib_mojam;;
+    hib_voxatron_key) hib_voxatron;;
+  esac
+}
+
 OPTIND=1
 while getopts "a:b:d:g:i:k:o:r:t:u:U:v:chIV" opt; do
   case "$opt" in
