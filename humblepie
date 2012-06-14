@@ -14,22 +14,16 @@ if (( EUID == 0 )); then
     "This is potentially dangerous!" \
     "Continue? (y/N): "
   read -r rootreply
-
-  [[ ${rootreply} =~ "[yY]??" ]] && {
-
-    if [[ ! -f "${rcfile}" ]]; then
-      rchome="/etc/humblepie"
-      [[ ! -d "${rchome}" ]] || mkdir -p "${rchome}"
-    fi
-
-  }
+  [[ "$rootreply" =~ "[yY]??" ]] && [[ ! -f "$rcfile" ]] && 
+    rchome="/etc/humblepie"
 fi
 
-rcfile="${rchome}/humblepie.rc"
-if [[ -r "${rcfile}" ]]; then
-  . "${rcfile}"
-elif [[ -f "${rcfile}" ]]; then
-  echo "Bad permissions on ${rcfile}!"
+rcfile="$rchome/humblepie.rc"
+[[ ! -d "$rchome" ]] || mkdir -p "$rchome"
+if [[ -r "$rcfile" ]]; then
+  . "$rcfile"
+elif [[ -f "$rcfile" ]]; then
+  echo "Bad permissions on $rcfile!"
 else
   echo "No config file detected!"
 fi
@@ -37,90 +31,97 @@ fi
 ## check for automagic, turn on verbosity by default
 (( automagic )) && verbose=1
 
+## if verbose is on, define verbose(). if off, define broken()
+## this way, testing for verbose is only done a single time
+## probably a better way to do this, but we'll get around to it later
 if (( verbose )); then
+  ## i would like to incorporate some gettext action in here
   printf "%s\n\t%s\n\t%s\n" "Verbose reporting is on!" \
     "Run this program again with -x no and -v no to turn it off." \
-    "Alternatively, use ${rcfile} to pre-configure all settings"
+    "Alternatively, use $rcfile to pre-configure all settings"
 
   verbose() {
       local info="$1"; shift
-      declare -a mesg
-      for a in "$@"; do
-        mesg+=("$a")
-      done
-      printf "%s\t%s\n" "==> $(gettext "${info}":)" "${mesg[@]}"
+      printf "%s\t%s\n" "==> $(gettext "$info": "$@")"
   } >&2
+  ## probably unnecessary to do
   broken() { : } &>/dev/null
 else
   broken() {
     local info="$1"; shift
-    printf "%s\n\t%s\n" "==> Something is wrong..." \
-      "Try again with -v\n" \
-      "PROBLEM: ${info[@]}" "$@"
-    exit 1
+    printf "%s\n\t%s\n" "==> $(gettext "Something is wrong"...)" \
+      "$(gettext "Try again with -v\n" "PROBLEM: $info" "$@")"
+    return 1
   } >&2
+  ## again, likely unnecessary
   verbose() { : } &>/dev/null
 fi
 
 check_key() {
   ## this needs to be opened up a bit to check keys manually specified on cli
-  local k="${!hib_bundle}"
-  [[ -z "${!k}" ]] && {
+  ## probably just accept $1, in fact that's what i'll do now
+  ## so send "${!hib_bundle}" instead and check
+  # local k="${!hib_bundle}"
+  local k="$1"
+  local ret=1
+  ## verify a key was sent, if empty cry about it
+  [[ -z "$k" ]] && {
     broken "Unspecified key."
     verbose "ERROR" "hib_bundle is not specified.\n" \
       "\tSpecify the bundle you would like to use with -b [bundle]"
-    exit 1
   }
     for v in "${!bundlekeys[@]}"; do
-      [[ "${v}" == "${!k}" ]] && {
-        hib_key="${v}"
+      [[ "$v" == "$k" ]] && {
+        hib_key="$v"
       }
     done
 }
 
 check_arch() {
-  if [[ -n "${hib_arch}" ]]; then
-    [[ "${hib_arch}" =~ "i.86" || "${hib_arch}" == "x86_64" ]] || {
+  if [[ -n "$hib_arch" ]]; then
+    [[ "$hib_arch" =~ "i.86" || "$hib_arch" == "x86_64" ]] || {
       broken "Bad architecture."
       verbose "WARNING" "Invalid value for hib_arch.\n" \
         "\tValid values are i386, i686, x86_64" \
         "\t\`uname -m\` should return the correct information."
-      [[ "${automagic}" == "y" ]] && {
+      ##TODO: find a better way to do the automagic things
+      ## probably similar to the way we do verbose
+      [[ "$automagic" == "y" ]] && {
         hib_arch="$(uname -m)"
-        verbose "INFO" "Using ${hib_arch} instead..."
+        verbose "INFO" "Using $hib_arch instead..."
       }
     }
   else 
     broken "Unspecified architecture."
     verbose "WARNING" "Architecture has not been specified.\n" \
       "\tPlease specify it with -a \`uname -m\`"
-    [[ "${automagic}" == "y" ]] && {
+    [[ "$automagic" == "y" ]] && {
       hib_arch="$(uname -m)"
-      verbose "INFO" "Using ${hib_arch} instead..."
+      verbose "INFO" "Using $hib_arch instead..."
     }
   fi
 }
 
 check_dir() {
   local d="$1"
-  if [[ -n "${d}" && -d "${d}" ]]; then
-    [[ -w "${d}" ]] || {
+  if [[ -n "$d" && -d "$d" ]]; then
+    [[ -w "$d" ]] || {
       broken "Bad directory."
-      verbose "ERROR" "${d} does not exist or is not writable!"
-      [[ "${automagic}" == "y" && -w "$PWD"]] && {
-        case "${d}" in
+      verbose "ERROR" "$d does not exist or is not writable!"
+      [[ "$automagic" == "y" && -w "$PWD"]] && {
+        case "$d" in
           hib_dir)
             hib_dir="$PWD/humbleindiebundle/"
-            verbose "INFO" "Using ${hib_dir} instead..."
+            verbose "INFO" "Using $hib_dir instead..."
             d="hib_dir"
             ;;
           hib_torrent_dir)
             hib_torrent_dir="$PWD/humbleindiebundle/torrents/"
-            verbose "INFO" "Using ${hib_torrent_dir} instead..."
+            verbose "INFO" "Using $hib_torrent_dir instead..."
             d="hib_torrent_dir"
             ;;
           *)
-            verbose "ERROR" "${d} should only be hib_dir or hib_torrent_dir!"
+            verbose "ERROR" "$d should only be hib_dir or hib_torrent_dir!"
             exit 1
             ;;
         esac
@@ -139,7 +140,7 @@ dl_game() {
   local uri
   # uri="$(curl -s http://www.humblebundle.com/downloads?key="${!hib_key}" \
   #   | grep "${game}")"
-  case "${dl_method}" in
+  case "$dl_http" in
     # torrent)
     #   [[ -x "$(type -p ${torrent_bin})" ]] || {
     #     broken "${torrent_bin} not found."
@@ -161,10 +162,10 @@ dl_game() {
     #     })
     #     ;;
     http)
-      uri="http://files.humblebundle.com/${hib_game}?key=${hib_key}"
-      [[ -f "${hib_dir}/${hib_game}.part" ]] && {
-        verbose "INFO" "Downloading ${hib_game}"
-        curl -o "${hib_dir}/${hib_game}.part" "${curl_dl_opts}" "${uri}"
+      uri="http://files.humblebundle.com/$hib_game?key=$hib_key"
+      [[ -f "$hib_dir/$hib_game.part" ]] && {
+        verbose "INFO" "Downloading $hib_game"
+        curl -o "$hib_dir/$hib_game.part" "$curl_dl_opts" "$uri"
       }
       ;;
     *) 
@@ -179,8 +180,8 @@ get_uri() {
   local game="$1"
   local key="$2"
   ## trying to save these files to avoid redownloading
-  local list="${key}.txt"
-  if [[ -n "${use_torrent}" ]]; then
+  local list="$key.txt"
+  if [[ -n "$use_torrent" ]]; then
   # uri="$(curl -s http://www.humblebundle.com/downloads?key="${!hib_key}" \
     ## this is index.html of the downloads page for specified key
   fi
@@ -192,8 +193,8 @@ get_list() {
   ## if the updater is run, grab all the files again
   ## clobber this file, the old version is always useless
   local k="$1"
-  lynx -dump http://www.humblebundle.com/downloads?key="${k}" |
-    grep files|grep -v webseed|cut -d'/' -f4|cut -d'?' -f1>"${k}.txt"
+  lynx -dump http://www.humblebundle.com/downloads?key="$k" |
+    grep files|grep -v webseed|cut -d'/' -f4|cut -d'?' -f1>"$k.txt"
 }
 
 download_file() {
@@ -235,24 +236,24 @@ download_file() {
 check_sum() {
   ## verify how to use md5sum properly to prevent printing filename or `-'
   local g="$1"
-  [[ "${check_sum}" == "y" ]] && {
-    hib_game_md5sum="$(md5sum "${g}")"
-    [[ "${hib_game_md5sum}" == "${hib_md5[$g]" ]] || {
+  [[ "$check_sum" == "y" ]] && {
+    hib_game_md5sum="$(md5sum "$g")"
+    [[ "$hib_game_md5sum" == "${hib_md5[$g]" ]] || {
       broken "MD5 did not match."
-      verbose "ERROR" "${hib_game_md5sum} does not match ${hib_md5[$g]}"
+      verbose "ERROR" "$hib_game_md5sum does not match ${hib_md5[$g]}"
     }
-    verbose "INFO" "${hib_game_md5sum} == ${hib_md5[$g]}"
-    verbose "INFO" "MD5 for ${g} was correct."
+    verbose "INFO" "$hib_game_md5sum == ${hib_md5[$g]}"
+    verbose "INFO" "MD5 for $g was correct."
   }
 }
 
 main() {
-  check_arch "${hib_arch}"
-  check_key "${hib_bundle}"
-  check_dir "${hib_dir}"
-  [[ "${dl_method}" == "torrent"  ]] && {
-    check_dir "${hib_torrent_dir}"
-  }
+  check_arch "$hib_arch"
+  check_key "$hib_bundle"
+  check_dir "$hib_dir"
+  # [[ "$dl_http" == "torrent"  ]] && {
+  #   check_dir "$hib_torrent_dir"
+  # }
   # sanitize_name "${hib_game}"
   # dl_game "${dl_cmd}" "${uri}" "${hib_game}"
   # check_sum "${hib_game}"
