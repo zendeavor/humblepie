@@ -283,7 +283,7 @@ main() {
     check_dir "${hib_torrent_dir}"
   }
   # sanitize_name "${hib_game}"
-  # dl_game "${hib_game}"
+  # dl_game "${dl_cmd}" "${uri}" "${hib_game}"
   # check_sum "${hib_game}"
 }
 
