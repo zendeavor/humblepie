@@ -70,32 +70,48 @@ check_key() {
     verbose "ERROR" "hib_bundle is not specified.\n" \
       "\tSpecify the bundle you would like to use with -b [bundle]"
   }
-    for v in "${!bundlekeys[@]}"; do
-      [[ "$v" == "$k" ]] && {
-        hib_key="$v"
-      }
-    done
+  ## now loop through the keys and when a match is found, set hib_key
+  ## only 1 key can be specified at a time
+  ## only 1 match is ever possible
+  for v in "${!bundlekeys[@]}"; do
+    [[ "$v" == "$k" ]] && {
+      hib_key="$v"
+      ## i break just to end the loop as early as possible
+      break
+    }
+  done
 }
 
 check_arch() {
-  if [[ -n "$hib_arch" ]]; then
-    [[ "$hib_arch" =~ "i.86" || "$hib_arch" == "x86_64" ]] || {
+  local arch="$1"
+  ## make sure hib_arch is set; then...
+  if [[ -n "$arch" ]]; then
+    ## ensure its value is legal in my context or cry about it
+    [[ "$arch" =~ "i.86" || "$arch" == "x86_64" ]] || {
       broken "Bad architecture."
       verbose "WARNING" "Invalid value for hib_arch.\n" \
         "\tValid values are i386, i686, x86_64" \
         "\t\`uname -m\` should return the correct information."
-      ##TODO: find a better way to do the automagic things
+
+      ## TODO: find a better way to do the automagic things
       ## probably similar to the way we do verbose
-      [[ "$automagic" == "y" ]] && {
+
+      ## if automagic is on, set hib_arch to something i expect
+      if (( automagic )); then
         hib_arch="$(uname -m)"
         verbose "INFO" "Using $hib_arch instead..."
-      }
+      fi
     }
   else 
+    ## so they never set hib_arch
     broken "Unspecified architecture."
     verbose "WARNING" "Architecture has not been specified.\n" \
       "\tPlease specify it with -a \`uname -m\`"
-    [[ "$automagic" == "y" ]] && {
+
+    ## TODO: can i combine this together somehow?
+
+    ## but i can still try to set it to something sane
+    (( automagic )) && {
       hib_arch="$(uname -m)"
       verbose "INFO" "Using $hib_arch instead..."
     }
@@ -103,12 +119,19 @@ check_arch() {
 }
 
 check_dir() {
+  ## grab 1st arg
   local d="$1"
-  if [[ -n "$d" && -d "$d" ]]; then
+  ## make sure it's a directory
+  if [[ -d "$d" ]]; then
+    ## make sure it is writable, or cry about it
     [[ -w "$d" ]] || {
       broken "Bad directory."
       verbose "ERROR" "$d does not exist or is not writable!"
-      [[ "$automagic" == "y" && -w "$PWD"]] && {
+      ##if automagic, and current dir is writable, use it
+      if (( automagic )) && [[ -w "$PWD"]]; then
+
+        ## TODO: does this need to be a case?
+
         case "$d" in
           hib_dir)
             hib_dir="$PWD/humbleindiebundle/"
@@ -126,12 +149,17 @@ check_dir() {
             ;;
         esac
         mkdir -p "${!d}"
-      }
+      fi
     }
   else
     broken "Unspecified directory."
     verbose "WARNING" "No download directory specified.\n" \
       "\tUsing current directory instead..."
+    ## unused var, not sure if helpful.  
+
+    ## TODO: is this really necessary? should i set both dirs to this?
+    ## maybe do it if automagic is on
+
     directory="$PWD"
   fi
 }
@@ -176,36 +204,41 @@ dl_game() {
 }
 
 get_uri() {
+  ## TODO: generate link from this
   ## takes hib_game and hib_key, slots it into link to get valid downloads
   local game="$1"
   local key="$2"
-  ## trying to save these files to avoid redownloading
+  # uri="$(curl -s http://www.humblebundle.com/downloads?key="${!hib_key}" \
   local list="$key.txt"
   if [[ -n "$use_torrent" ]]; then
-  # uri="$(curl -s http://www.humblebundle.com/downloads?key="${!hib_key}" \
     ## this is index.html of the downloads page for specified key
   fi
 }
 
 get_list() {
+  local k="$1"
+  ## trying to save these files to avoid redownloading
   ## this is a list of raw filenames and should be grabbed in 2 cases:
   ## if this file does not already exist, grab it
   ## if the updater is run, grab all the files again
   ## clobber this file, the old version is always useless
-  local k="$1"
+
+  ## quick and dirty way to grab a complete list of files
   lynx -dump http://www.humblebundle.com/downloads?key="$k" |
     grep files|grep -v webseed|cut -d'/' -f4|cut -d'?' -f1>"$k.txt"
 }
 
 download_file() {
+  ## new try at downloading
   # download command
-  local dlcmd=$1
+  local dlcmd="$1"
   # URL of the file
-  local url=$2
+  local url="$2"
   # destination file
-  local file=$3
+  local file="$3"
   # temporary download file, default to last component of the URL
-  local dlfile="${url##*/}"
+  # but the last component isn't always the real file!
+  # local dlfile="${url##*/}"
 
   # replace %o by the temporary dlfile if it exists
   if [[ $dlcmd = *%o* ]]; then
@@ -222,7 +255,7 @@ download_file() {
   local ret=0
   eval "$dlcmd || ret=\$?"
   if (( ret )); then
-    [[ ! -s $dlfile ]] && rm -f -- "$dlfile"
+    [[ ! -s "$dlfile" ]] && rm -f -- "$dlfile"
     return $ret
   fi
 
@@ -236,30 +269,34 @@ download_file() {
 check_sum() {
   ## verify how to use md5sum properly to prevent printing filename or `-'
   local g="$1"
-  [[ "$check_sum" == "y" ]] && {
+  ## if checksumming is enabled, then...
+  if (( check_sum )); then
+    ## set the md5sum (md5sum prints the filename too, need to quiet it =\)
     hib_game_md5sum="$(md5sum "$g")"
+    ## TODO: generate "${hib_md5[@]}"
+    ## verify the new md5 against the md5 array or cry about it
     [[ "$hib_game_md5sum" == "${hib_md5[$g]" ]] || {
       broken "MD5 did not match."
       verbose "ERROR" "$hib_game_md5sum does not match ${hib_md5[$g]}"
     }
     verbose "INFO" "$hib_game_md5sum == ${hib_md5[$g]}"
     verbose "INFO" "MD5 for $g was correct."
-  }
+  fi
 }
 
-main() {
-  check_arch "$hib_arch"
-  check_key "$hib_bundle"
-  check_dir "$hib_dir"
+# main() {
+#   check_arch "$hib_arch"
+#   check_key "$hib_bundle"
+#   check_dir "$hib_dir"
   # [[ "$dl_http" == "torrent"  ]] && {
   #   check_dir "$hib_torrent_dir"
   # }
   # sanitize_name "${hib_game}"
   # dl_game "${dl_cmd}" "${uri}" "${hib_game}"
   # check_sum "${hib_game}"
-}
+# }
 
-main
+# main
 
 # sanitize_name() {
 #   case "${hib_key}" in
