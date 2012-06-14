@@ -155,7 +155,6 @@ check_dir() {
     broken "Unspecified directory."
     verbose "WARNING" "No download directory specified.\n" \
       "\tUsing current directory instead..."
-    ## unused var, not sure if helpful.  
 
     ## TODO: is this really necessary? should i set both dirs to this?
     ## maybe do it if automagic is on
