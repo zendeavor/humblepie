@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# vim: ft=sh sw=2 sts=2 et
 ###############################################################################
 ### thanks to:
 ### JavaAtom <faustian.merula@gmail.com>: filename generation for Introversion
@@ -81,7 +82,7 @@ check_key() {
   ## if no key, cry
   for var in "${!hibkey_*}"; do
     if [[ -n "$var" ]]; then 
-      bundlekeys+=("$var") 
+      bundlekeys+=( ["$var"]="${!var}" ) 
       verbose "INFO" "Key for $var found."
     else 
       broken "No keys discovered."
@@ -227,4 +228,3 @@ check_sum() {
   grep "$md5" "$list" || return 2
 }
 
-# vim: ft=sh sw=2 sts=2 et

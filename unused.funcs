@@ -1,5 +1,45 @@
 #!/usr/bin/env bash
+# vim: ft=sh
 ## test functions i probably don't want
+dl_game() {
+  local uri
+  # uri="$(curl -s http://www.humblebundle.com/downloads?key="${!hib_key}" \
+  #   | grep "${game}")"
+  case "$dl_http" in
+    # torrent)
+    #   [[ -x "$(type -p ${torrent_bin})" ]] || {
+    #     broken "${torrent_bin} not found."
+    #     verbose "ERROR" "${torrent_bin} executable not found!" \
+    #       "Please install ${torrent_bin}."
+    #     exit 1
+    #   }
+    #     uri="${uri##*data-bt\=\'}"
+    #     uri="${uri%%\'*}" 
+    #     verbose "INFO" "To resume this download later run:" \
+    #       "\`${torrent_bin} ${dl_opts} ${game}.torrent\`"
+    #     [[ ! -f "${hib_torrent_dir}/${game}.torrent" ]] && {
+    #       verbose "INFO" "Downloading ${hib_game}.torrent."
+    #       curl -o "${hib_torrent_dir}/${game}.torrent" "${uri}"
+    #     }
+    #     (cd "${hib_torrent_dir}" && {
+    #       verbose "INFO" "Downloading ${hib_game}."
+    #       "${torrent_bin}" "${dl_opts}" "${game}.torrent"
+    #     })
+    #     ;;
+    http)
+      uri="http://files.humblebundle.com/$hib_game?key=$hib_key"
+      [[ -f "$hib_dir/$hib_game.part" ]] && {
+        verbose "INFO" "Downloading $hib_game"
+        curl -o "$hib_dir/$hib_game.part" "$curl_dl_opts" "$uri"
+      }
+      ;;
+    *) 
+      broken "No download method specified."
+      verbose "ERROR" "Specify download method with -t [type]"
+      exit 1
+  esac
+}
+
 gamever() {
   for _key in "${!hibgames[@]}"; do
     case "${_key}" in
@@ -245,4 +285,3 @@ while getopts "a:b:d:g:i:k:o:r:t:u:U:v:chIV" opt; do
       ;;
   esac
 done
-# vim: ft=sh

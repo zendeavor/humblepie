@@ -1,19 +1,5 @@
+# vim: ft=sh sw=2 sts=2 et
 declare -ar bundlekeys
-
-bundlekeys=('hib_1_key' 
-            'hib_2_key'
-            'hib_3_key'
-            'hib_4_key'
-            'hib_5_key'
-            'hib_android1_key'
-            'hib_android2_key'
-            'hib_botanicula_key'
-            'hib_frozenbyte_key'
-            'hib_frozensynapse_key'
-            'hib_introversion_key'
-            'hib_mojang_key'
-            'hib_voxatron_key'
-            )
 
 declare -ar architectures
 
@@ -267,4 +253,3 @@ darwinia_1.43_i386.tar.gz
 multiwinia_1.3.1-1_i386.tar.gz                 
 uplink_1.6-1_i386.tar.gz                       
 dungeonsofdredmor.tar.bz2                      
-# vim: ft=sh sw=2 sts=2 et

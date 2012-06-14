@@ -1,0 +1,38 @@
+#!/bin/bash -e
+# vim: ft=sh
+# set -x
+
+. ./humblepie.rc
+for var in "${!hibkey_*}"; do
+  if [[ -n "$var" ]]; then 
+    echo "$var"
+    echo "${!var}"
+    # bundlekeys+=( ["$var"]="${!var}" ) 
+    # verbose "INFO" "Key for $var found."
+  else :
+    # broken "No keys discovered."
+    # verbose "ERROR" "No keys configured.\n" \
+    #   "Please specify a key with -k [key] or in your user's config file."
+  fi
+done
+echo "${bundlekeys[@]}"
+echo "${!bundlekeys[@]}"
+
+# (( EUID ))
+# echo $?
+# (( ! EUID ))
+# echo $?
+# a="fob:yx:"
+# b="foo,bar:,baz,quux:"
+# for i in "${a//,/ }"; do
+#   if [[ "${1:2}" = "${i//:}" ]]; then
+#     echo $i
+#   fi
+# done
+# for i in "${b//,/ }"; do
+#   if [[ "${1:2}" = "${i//:}" ]]; then
+#     echo $i
+#   fi
+# done
+
+

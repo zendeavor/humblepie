@@ -26,10 +26,10 @@ asroot=0
 ## allow script to cheat a bit when values are unset or invalid
 ## this also automatically enables verbosity no matter if set in this file
 automagic=0
-## spit out more detailed info, warnings, and errors
-verbose=0
 ## check md5sum of downloads
 check_md5=0
+## spit out more detailed info, warnings, and errors
+verbose=0
 ## turn on automatic checking/downloading updates
 update=0
 
