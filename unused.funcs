@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 ## test functions i probably don't want
 gamever() {
-  for _key in "${hibgames[@]}"; do
+  for _key in "${!hibgames[@]}"; do
     case "${_key}" in
       ## all of these games have shit naming conventions
       andyetitmoves)
         ## andyetitmoves-1.2.2-1_x86_64.tar.gz
-        ver="1.2.2-1"
+        _ver="1.2.2-1"
+        _arch="x86_64"
+        _type="tar.gz"
         break
         ;;
       bittriprunner) ## pfft

@@ -2,7 +2,7 @@
 ###############################################################################
 ### thanks to:
 ### JavaAtom <faustian.merula@gmail.com>: filename generation for Introversion
-###
+### kevlarman <>: filenames for hib 1, 2
 ###
 ###############################################################################
 ## covered bundles:
@@ -191,29 +191,28 @@ dl_game() {
   local uri
   # uri="$(curl -s http://www.humblebundle.com/downloads?key="${!hib_key}" \
   #   | grep "${game}")"
-  uri="http://www.humblebundle.com/downloads?key=${!hib_key}"
-  uri="${uri##*$hib_game}"
+  uri="http://files.humblebundle.com/${hib_game}?key=${!hib_key}"
   case "${dl_method}" in
-    torrent)
-      [[ -x "$(type -p ${torrent_bin})" ]] || {
-        broken "${torrent_bin} not found."
-        verbose "ERROR" "${torrent_bin} executable not found!" \
-          "Please install ${torrent_bin}."
-        exit 1
-      }
-        uri="${uri##*data-bt\=\'}"
-        uri="${uri%%\'*}" 
-        verbose "INFO" "To resume this download later run:" \
-          "\`${torrent_bin} ${dl_opts} ${game}.torrent\`"
-        [[ ! -f "${hib_torrent_dir}/${game}.torrent" ]] && {
-          verbose "INFO" "Downloading ${hib_game}.torrent."
-          curl -o "${hib_torrent_dir}/${game}.torrent" "${uri}"
-        }
-        (cd "${hib_torrent_dir}" && {
-          verbose "INFO" "Downloading ${hib_game}."
-          "${torrent_bin}" "${dl_opts}" "${game}.torrent"
-        })
-        ;;
+    # torrent)
+    #   [[ -x "$(type -p ${torrent_bin})" ]] || {
+    #     broken "${torrent_bin} not found."
+    #     verbose "ERROR" "${torrent_bin} executable not found!" \
+    #       "Please install ${torrent_bin}."
+    #     exit 1
+    #   }
+    #     uri="${uri##*data-bt\=\'}"
+    #     uri="${uri%%\'*}" 
+    #     verbose "INFO" "To resume this download later run:" \
+    #       "\`${torrent_bin} ${dl_opts} ${game}.torrent\`"
+    #     [[ ! -f "${hib_torrent_dir}/${game}.torrent" ]] && {
+    #       verbose "INFO" "Downloading ${hib_game}.torrent."
+    #       curl -o "${hib_torrent_dir}/${game}.torrent" "${uri}"
+    #     }
+    #     (cd "${hib_torrent_dir}" && {
+    #       verbose "INFO" "Downloading ${hib_game}."
+    #       "${torrent_bin}" "${dl_opts}" "${game}.torrent"
+    #     })
+    #     ;;
     http)
       uri="${uri##*data-web\=\'}"
       uri="${uri%%\'*}" 
