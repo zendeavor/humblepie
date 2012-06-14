@@ -10,12 +10,12 @@
 ##  4, 5, frozensynapse, introversion/1/2(maybe?)
 
 asroot=0
-automagic=1
+automagic=0
 hib_check_key=1
-verbose=1
+verbose=0
 rcdir="${XDG_CONFIG_HOME}/humblepie"
 
-(( EUID == 0 )) && {
+(( ! EUID )) && {
   ## check if they used root on purpose
   if  (( ! asroot )); then
     ## if $rcfile doesn't exist, we're going to use /etc instead
@@ -25,7 +25,8 @@ rcdir="${XDG_CONFIG_HOME}/humblepie"
 }
 
 rcfile="$rcdir/humblepie.rc"
-[[ -d "$rcdir" ]] || mkdir -p "$rcdir"
+## i should be able to send this to check_dir()
+# [[ -d "$rcdir" ]] || mkdir -p "$rcdir"
 if [[ -r "$rcfile" ]]; then
   . "$rcfile"
 elif [[ -f "$rcfile" ]]; then
@@ -60,8 +61,11 @@ if (( ! verbose )); then
     local info="$1"; shift
     printf "%s\t%s\n" "==> $(gettext "$info": "$@")"
   } >&2
+  ## define this as false so i can do `broken && cmd` and cmd..
+  ## .. only executes if verbose() { false; }; otherwise..
+  ## .. i can do `broken || cmd` if necessary
   ## probably unnecessary to do
-  broken() { false } &>/dev/null
+  broken() { false; } &>/dev/null
 else
   broken() {
     ## broken() always returns 1 because we _probably_ want to exit 
@@ -71,42 +75,33 @@ else
     return 1
   } >&2
   ## again, likely unnecessary
-  verbose() { false } &>/dev/null
+  verbose() { false; } &>/dev/null
 fi
 
 check_key() {
   ## grab the key
   # local k="$1" ret=0
-  ## declare my array for keys
-  declare -a bundlekeys
-  ## if no key, cry
-  for var in "${!hibkey_*}"; do
-    if [[ -n "$var" ]]; then 
+  ## declare the array for keys
+  declare -A bundlekeys
+  ## expand all $hibkey_* variables from rcfile if they are set
+  ## the quotes and @ are important for proper expansion
+  for var in "${!hibkey_@}"; do
+    ## this is an indirect expansion to test if any $hibkey_* expanded
+    ## ${!var} will equal the value of each $hibkey_* in turn
+    ## if hibkey_foo="barbazquux" then ${!var} expands to "barbazquux"
+    ## $var would be "hibkey_foo
+    ## only populate array if there is a key defined
+    if [[ -n ${!var} ]]; then
+      ## ["hibkey_foo"]="barbazquux"
       bundlekeys+=( ["$var"]="${!var}" ) 
-      verbose "INFO" "Key for $var found."
+      verbose "INFO" "Key ${!var} for $var found."
     else 
-      broken "No keys discovered."
-      verbose "ERROR" "No keys configured.\n" \
-        "Please specify a key with -k [key] or in your user's config file."
+      ## if no key found, cry
+      broken "No keys discovered." ||
+        verbose "ERROR" "No keys configured.\n" \
+          "Please specify a key with -k [key] or in your user's config file."
     fi
   done
-  ## now loop through the keys and when a match is found, set hib_key
-  ## only 1 key can be specified at a time
-  ## only 1 match is ever possible
-  # for val in "${!bundlekeys[@]}"; do
-  #   [[ "$val" == "$k" ]] && {
-  #     hib_key="$val"; return
-  #   }
-  #   ## this return only occurs if no keys match
-  #   ret=2; done; return $ret
-}
-
-inarray() {
-  local n=$1 h; shift; 
-  for h; do 
-    [[ $n = "$h" ]] && return
-  done; return 1; 
-  # usage: inarray "$value" "${array[@]}"                                                     
 }
 
 check_arch() {
@@ -115,10 +110,10 @@ check_arch() {
   if [[ -n "$arch" ]]; then
     ## ensure its value is legal in my context or cry about it
     [[ "$arch" =~ "i.86" || "$arch" == "x86_64" ]] || {
-      broken "Bad architecture."
-      verbose "WARNING" "Invalid value for hib_arch.\n" \
-        "\tValid values are i386, i686, x86_64" \
-        "\t\`uname -m\` should return the correct information."
+      broken "Bad architecture." ||
+        verbose "WARNING" "Invalid value for hib_arch.\n" \
+          "\tValid values are i386, i686, x86_64" \
+          "\t\`uname -m\` should return the correct information."
 
       ## TODO: find a better way to do the automagic things
       ## probably similar to the way we do verbose
@@ -131,9 +126,9 @@ check_arch() {
     }
   else 
     ## so they never set hib_arch
-    broken "Unspecified architecture."
-    verbose "ERROR" "Architecture has not been specified.\n" \
-      "\tPlease specify it with -a \`uname -m\`"
+    broken "Unspecified architecture." ||
+      verbose "ERROR" "Architecture has not been specified.\n" \
+        "\tPlease specify it with -a \`uname -m\`"
 
     ## but i can still try to set it to something sane
     if (( ! automagic )); then
@@ -146,53 +141,57 @@ check_arch() {
 }
 
 check_dir() {
-  ## grab 1st arg
-  local d="$1"
+  local d
+  ## loop over args, we'll just call this 1 time per run
+  for d in "$@"; do
   ## make sure it's a directory
-  if [[ -d "$d" ]]; then
-    ## make sure it is r/w, or cry about it
-    [[ -r "$d" && -w "$d" ]] || {
-      broken "Bad directory."
-      verbose "ERROR" "$d does not exist or is not writable!"
-      ##if automagic, and current dir is writable, use it
-      if (( ! automagic )) && [[ -r "$PWD" &&  -w "$PWD"]]; then
+    if [[ -d "$d" ]]; then
+      ## make sure it is r/w, or cry about it
+      [[ -r "$d" && -w "$d" ]] || {
+        broken "Bad directory." ||
+          verbose "ERROR" "$d does not exist or you lack permissions!"
+        ## if automagic, and current dir is writable, use it
+        if (( ! automagic )) && [[ -r "$PWD" &&  -w "$PWD"]]; then
 
-        ## TODO: does this need to be a case?
+          ## TODO: does this need to be a case?
+          ## NOTE: probably, i'm trying to check more dirs
 
-        case "$d" in
-          hib_dir)
-            hib_dir="$PWD/humbleindiebundle/"
-            verbose "INFO" "Using $hib_dir instead..."
-            d="hib_dir"
-            ;;
-          hib_torrent_dir)
-            hib_torrent_dir="$PWD/humbleindiebundle/torrents/"
-            verbose "INFO" "Using $hib_torrent_dir instead..."
-            d="hib_torrent_dir"
-            ;;
-          rcdir)
-            rcdir="$PWD/humblepie"
-            verbose "INFO" "Using $rcdir instead..."
-            d="rcdir"
-            ;;
-          *)
-            verbose "ERROR" "Pass a proper value for \$d."
-            return 1
-            ;;
-        esac
-        mkdir -p "${!d}"
-      fi
-    }
-  else
-    broken "Unspecified directory."
-    verbose "WARNING" "No download directory specified.\n" \
-      "\tUsing current directory instead..."
+          ## TODO: find out if this should be indirect, it's obtuse
+          case "${!d}" in
+            hib_dir)
+              dir_hib="$PWD/humbleindiebundle/"
+              verbose "INFO" "Using $dir_hib instead..."
+              d="dir_hib"
+              ;;
+            hib_torrent_dir)
+              hib_torrent_dir="$PWD/humbleindiebundle/torrents/"
+              verbose "INFO" "Using $hib_torrent_dir instead..."
+              d="dir_torrent_hib"
+              ;;
+            rcdir)
+              dir_rc="$PWD/humblepie"
+              verbose "INFO" "Using $rcdir instead..."
+              d="dir_rc"
+              ;;
+            *)
+              verbose "ERROR" "Pass a proper value for \$d."
+              return 1
+              ;;
+          esac
+          mkdir -p "${!d}"
+        fi
+      }
+    else
+      broken "Unspecified directory." ||
+        verbose "WARNING" "No download directory specified.\n" \
+          "\tUsing current directory instead..."
 
-    ## TODO: is this really necessary? should i set both dirs to this?
-    ## maybe do it if automagic is on
+      ## TODO: is this really necessary? should i set both dirs to this?
+      ## maybe do it if automagic is on
 
-    directory="$PWD"
-  fi
+      directory="$PWD"
+    fi
+done
 }
 
 get_uri() {

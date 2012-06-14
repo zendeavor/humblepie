@@ -1,23 +1,31 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
 # vim: ft=sh
 # set -x
 
-. ./humblepie.rc
-declare -A bundlekeys
-for var in ${!hibkey_*}; do
-  if [[ -n "$var" ]]; then 
-    # echo "$var"
-    # echo "${!var}"
-    bundlekeys+=( ["$var"]="${!var}" ) 
-    # verbose "INFO" "Key for $var found."
-    # echo "${!bundlekeys[@]}"
-  else :
-    # broken "No keys discovered."
-    # verbose "ERROR" "No keys configured.\n" \
-    #   "Please specify a key with -k [key] or in your user's config file."
-  fi
-done
-echo "${bundlekeys[@]}"
+a="/foo/bar"
+b="a"
+c="${!a@}"
+d="${!b}"
+e="${!c}"
+
+echo "a:$a b:$b c:$c d:$d e:$e"
+
+# . ./humblepie.rc
+# declare -A bundlekeys
+# for var in "${!hibkey_@}"; do
+#   if [[ -n "$var" ]]; then 
+#     # echo "$var"
+#     # echo "${!var}"
+#     bundlekeys+=( ["$var"]="${!var}" ) 
+#     # verbose "INFO" "Key for $var found."
+#   else :
+#     # broken "No keys discovered."
+#     # verbose "ERROR" "No keys configured.\n" \
+#     #   "Please specify a key with -k [key] or in your user's config file."
+#   fi
+# done
+# echo "foo bar baz ${!bundlekeys[@]} quux"
+# echo "foo bar ${bundlekeys[@]} quux"
 
 # (( EUID ))
 # echo $?
