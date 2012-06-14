@@ -6,89 +6,38 @@
 ###
 ###############################################################################
 ## covered bundles:
-##  4, 5, frozensynapse, introversion(maybe?)
-## kevlarman has 2 more bundles
-rcfile="${XDG_CONFIG_HOME}/humblepie.rc"
-[[ -f "${rcfile}" ]] && . "${rcfile}"
+##  4, 5, frozensynapse, introversion/1/2(maybe?)
 
+rchome="${XDG_CONFIG_HOME}/humblepie"
+if (( EUID == 0 )); then
+  printf "%s%s\n\t%s"  "You are running this script as root! " \
+    "This is potentially dangerous!" \
+    "Continue? (y/N): "
+  read -r rootreply
 
-OPTIND=1
-while getopts "a:b:d:g:i:k:o:r:t:u:U:v:chIV" opt; do
-  case "$opt" in
-    a) ## check_arch will make sure i get a value i can work with
-      hib_arch="${OPTARG}"
-      ;;
-    b) ## check_key should successfully verify that keys match
-      hib_bundle="hib_${OPTARG}_key"
-      ;;
-    c) ## check_game should verify md5, not implemented
-      check_sum="y"
-      [[ -n "${OPTARG}" ]] && {
-        sanitize_name "${OPTARG}"
-        check_sum "${hib_game}"
-        exit 0
-      }
-      ;;
-    d) ## set the download/game dir
-      hib_dir="${OPTARG}"
-      ;;
-    g) ## this should just store the game name
-      # for now, i plan to have another function that kicks off the rest
-      hib_game="${OPTARG}"
-      ;;
-    h\?) : ## print usage
-      ;;
-    i) ## not implemented
-      # install_dir="${OPTARG}"
-      ;;
-    I) : ## not implemented, maybe never will but seems simplish
-      # interactive="y"
-      ;;
-    k) ## specify a key manually, not implemented
-      hib_key="${OPTARG}"
-      ;;
-    m) ## set download method
-      case "${OPTARG}" in
-        t|torrent) dl_method="torrent"
-          ;;
-        h|http) dl_method="http"
-          ;;
-      esac
-      ;;
-    o) ## set options for download; these MUST be quoted
-      dl_opts="${OPTARG}"
-      ;;
-    r|R|u|U) : ## uninstall the game; essentially, just rm -rf the install dir
-      # which means i need some way to FIND the install dir if not in rcfile
-      ;;
-    t) ## set the hib_torrent_dir
-      hib_torrent_dir="${OPTARG}"
-      ;;
-    U) ## check for updates and download if possible
-      # if [[ "${OPTARG}" ]]; then
-      #   hib_game="${OPTARG}"
-      #   automagic="y"
-      #   updater
-      # else
-      #   updater "$0"
-      # fi
-      ;;
-    v) ## enable verbosity
-      [[ "${OPTARG}" != "no" ]] &&
-        verbose="y"
-      ;;
-    V) : ## print version info
-      ;;
-    x) 
-      [[ "${OPTARG}" != "no" ]] &&
-        automagic="y"
-      ;;
-  esac
-done
+  [[ ${rootreply} =~ "[yY]??" ]] && {
 
-[[ "${automagic}" == "y" ]] && verbose=y
+    if [[ ! -f "${rcfile}" ]]; then
+      rchome="/etc/humblepie"
+      [[ ! -d "${rchome}" ]] || mkdir -p "${rchome}"
+    fi
 
-if [[ ${verbose} == "y" ]]; then
+  }
+fi
+
+rcfile="${rchome}/humblepie.rc"
+if [[ -r "${rcfile}" ]]; then
+  . "${rcfile}"
+elif [[ -f "${rcfile}" ]]; then
+  echo "Bad permissions on ${rcfile}!"
+else
+  echo "No config file detected!"
+fi
+
+## check for automagic, turn on verbosity by default
+(( automagic )) && verbose=1
+
+if (( verbose )); then
   printf "%s\n\t%s\n\t%s\n" "Verbose reporting is on!" \
     "Run this program again with -x no and -v no to turn it off." \
     "Alternatively, use ${rcfile} to pre-configure all settings"
@@ -225,6 +174,28 @@ dl_game() {
   esac
 }
 
+get_uri() {
+  ## takes hib_game and hib_key, slots it into link to get valid downloads
+  local game="$1"
+  local key="$2"
+  ## trying to save these files to avoid redownloading
+  local list="${key}.txt"
+  if [[ -n "${use_torrent}" ]]; then
+  # uri="$(curl -s http://www.humblebundle.com/downloads?key="${!hib_key}" \
+    ## this is index.html of the downloads page for specified key
+  fi
+}
+
+get_list() {
+  ## this is a list of raw filenames and should be grabbed in 2 cases:
+  ## if this file does not already exist, grab it
+  ## if the updater is run, grab all the files again
+  ## clobber this file, the old version is always useless
+  local k="$1"
+  lynx -dump http://www.humblebundle.com/downloads?key="${k}" |
+    grep files|grep -v webseed|cut -d'/' -f4|cut -d'?' -f1>"${k}.txt"
+}
+
 download_file() {
   # download command
   local dlcmd=$1
@@ -285,17 +256,6 @@ main() {
   # sanitize_name "${hib_game}"
   # dl_game "${dl_cmd}" "${uri}" "${hib_game}"
   # check_sum "${hib_game}"
-}
-
-(( EUID )) && {
-  printf "%s%s\n\t%s"  "You are running this script as root! " \
-    "This is potentially dangerous!" \
-    "Continue? (y/N): "
-  read -r _rootuser
-  [[ ${_rootuser} =~ "[yY]??" ]] && {
-  main
-  exit
-  }
 }
 
 main
