@@ -10,6 +10,7 @@ for var in ${!hibkey_*}; do
     # echo "${!var}"
     bundlekeys+=( ["$var"]="${!var}" ) 
     # verbose "INFO" "Key for $var found."
+    # echo "${!bundlekeys[@]}"
   else :
     # broken "No keys discovered."
     # verbose "ERROR" "No keys configured.\n" \
@@ -17,7 +18,6 @@ for var in ${!hibkey_*}; do
   fi
 done
 echo "${bundlekeys[@]}"
-echo "${!bundlekeys[@]}"
 
 # (( EUID ))
 # echo $?
