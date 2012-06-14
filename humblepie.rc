@@ -1,0 +1,36 @@
+## specify keys in the form `hibkey_BUNDLE' where:
+## BUNDLE is any name you prefer
+## choose the bundle with `humblepie -b BUNDLE`
+## i use these vars to generate an array with exactly the number
+## of bundles that you have configured
+## then i correlate the bundle you chose with the matching key (almost...)
+## this ensures that you specified a bundle successfully and won't let you
+## attempt a download with an empty key
+hibkey_1="foobar"
+hibkey_2="foobar"
+hibkey_3="foobar"
+hibkey_4="foobar"
+hibkey_5="foobar"
+hibkey_android1="foobar"
+hibkey_android2="foobar"
+hibkey_botanicula="foobar"
+hibkey_frozenbyte="foobar"
+hibkey_frozensynapse="foobar"
+hibkey_introversion="foobar"
+hibkey_mojang="foobar"
+hibkey_voxatron="foobar"
+
+## set these to 1 to enable
+## allow running as root (for systemwide installations)
+asroot=0
+## allow script to cheat a bit when values are unset or invalid
+## this also automatically enables verbosity no matter if set in this file
+automagic=0
+## spit out more detailed info, warnings, and errors
+verbose=0
+## check md5sum of downloads
+check_md5=0
+## turn on automatic checking/downloading updates
+update=0
+
+# vim: ft=sh
