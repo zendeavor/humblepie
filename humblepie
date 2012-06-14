@@ -8,9 +8,10 @@
 ## covered bundles:
 ##  4, 5, frozensynapse, introversion/1/2(maybe?)
 
-automagic=1
-verbose=1
 asroot=0
+automagic=1
+hib_check_key=1
+verbose=1
 rcdir="${XDG_CONFIG_HOME}/humblepie"
 
 (( EUID == 0 )) && {
@@ -54,6 +55,7 @@ if (( ! verbose )); then
     ## verbose has no special return value associated with it
     ## sometimes we call it to print extra info
     ## sometimes it prints errors. return accordingly
+    ## WARNING: return 2; ERROR: return 1; else return 0
     local info="$1"; shift
     printf "%s\t%s\n" "==> $(gettext "$info": "$@")"
   } >&2
@@ -72,32 +74,37 @@ else
 fi
 
 check_key() {
-  ## this needs to be opened up a bit to check keys manually specified on cli
-  ## probably just accept $1, in fact that's what i'll do now
-  ## so send "${!hib_bundle}" or the key from cli
-  ## TODO: now figure out why i am verifying a key from cli
-  ## those should only be specified because not in config yet
-  # local k="${!hib_bundle}"
-  local k="$1"
-  local ret=0
-  ## verify a key was sent, if empty cry about it
+  ## grab the key
+  local k="$1" ret=0
+  ## if no key, cry
   [[ -z "$k" ]] && {
     broken "Unspecified key."
     verbose "ERROR" "hib_bundle is not specified.\n" \
       "\tSpecify the bundle you would like to use with -b [bundle]"
     ret=1
   }
+  for val in "${!hib_*}"; do
+    [[ -n "$val" ]] && {
+    bundlekeys+=("$val"); return
+    }
+  done
   ## now loop through the keys and when a match is found, set hib_key
   ## only 1 key can be specified at a time
   ## only 1 match is ever possible
-  for v in "${!bundlekeys[@]}"; do
+  for v in "${bundlekeys[@]}"; do
     [[ "$v" == "$k" ]] && {
-      hib_key="$v"
-      ## i break just to end the loop as early as possible
-      break
+      hib_key="$v"; return
     }
-    ret=2
-  done
+    ## this return only occurs if no keys match
+    ret=2; done; return $ret
+}
+
+inarray() {
+  local n=$1 h; shift; 
+  for h; do 
+    [[ $n = "$h" ]] && return
+  done; return 1; 
+  # usage: inarray "$value" "${array[@]}"                                                     
 }
 
 check_arch() {
