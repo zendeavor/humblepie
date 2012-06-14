@@ -229,16 +229,16 @@ dl_game() {
   esac
 }
 
-check_sum(){
+check_sum() {
   local g="$1"
   [[ "${check_sum}" == "y" ]] && {
-    hib_game_md5sum="$(md5sum "${hib_game}")"
-    [[ "${hib_game_md5sum}" == "${hib_md5[$hib_game]" ]] || {
+    hib_game_md5sum="$(md5sum "${g}")"
+    [[ "${hib_game_md5sum}" == "${hib_md5[$g]" ]] || {
       broken "MD5 did not match."
-      verbose "ERROR" "${hib_game_md5sum} does not match ${hib_md5[$hib_game]}"
+      verbose "ERROR" "${hib_game_md5sum} does not match ${hib_md5[$g]}"
     }
-    verbose "INFO" "${hib_game_md5sum} == ${hib_md5[$hib_game]}"
-    verbose "INFO" "MD5 for ${hib_game} was correct."
+    verbose "INFO" "${hib_game_md5sum} == ${hib_md5[$g]}"
+    verbose "INFO" "MD5 for ${g} was correct."
   }
 }
 
@@ -250,8 +250,8 @@ main() {
     check_dir "${hib_torrent_dir}"
   }
   # sanitize_name "${hib_game}"
-  dl_game "${hib_game}"
-  check_sum "${hib_game}"
+  # dl_game "${hib_game}"
+  # check_sum "${hib_game}"
 }
 
 (( EUID )) && {

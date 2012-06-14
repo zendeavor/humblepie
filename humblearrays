@@ -25,7 +25,7 @@ declare -Ar hibbotanicula hibfrozenbyte hibfrozensynapse
 declare -Ar hibmojang hibvoxatron hibintroversion
 
 hib1=( 
-      ["aquaria"]="aquaria"
+      ["aquaria"]="aquaria_1.1.3"
       ["gish"]="gish"
       ["lugaruhd"]="lugaruhd"
       ["lugaru"]="lugaruhd"
@@ -151,7 +151,7 @@ hibfrozensynapse=(
                   ["trauma"]="tramua"
                   )
 hibintroversion=( 
-                ["aquaria"]="aquaria"
+                ["aquaria"]="aquaria_1.1.3"
                 ["crayonphysicsdeluxe"]="crayonphysicsdeluxe"
                 ["crayonphysics"]="crayonphysicsdeluxe"
                 ["cpd"]="crayonphysicsdeluxe"
