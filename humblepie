@@ -8,22 +8,22 @@
 ## covered bundles:
 ##  4, 5, frozensynapse, introversion/1/2(maybe?)
 
-rchome="${XDG_CONFIG_HOME}/humblepie"
-if (( EUID == 0 )); then
-  printf "%s%s\n\t%s"  "You are running this script as root! " \
-    "This is potentially dangerous!" \
-    "Continue? (y/N): "
-  read -r rootreply
-  [[ "$rootreply" =~ "[yY]??" ]] &&
-   ## if they want to continue, test for $rcfile
-    [[ ! -f "$rcfile" ]] && 
-    ## if it's not there, we're going to use /etc instead
-    ## they're already root at this point, so further checking is moot
-      rchome="/etc/humblepie"
-fi
+automagic=1
+verbose=1
+asroot=0
+rcdir="${XDG_CONFIG_HOME}/humblepie"
 
-rcfile="$rchome/humblepie.rc"
-[[ -d "$rchome" ]] || mkdir -p "$rchome"
+(( EUID == 0 )) && {
+  ## check if they used root on purpose
+  if  (( ! asroot )); then
+    ## if $rcfile doesn't exist, we're going to use /etc instead
+    ## they're already root at this point, so further checking is moot
+    [[ ! -f "$rcfile" ]] && rcdir="/etc/humblepie"
+  fi
+}
+
+rcfile="$rcdir/humblepie.rc"
+[[ -d "$rcdir" ]] || mkdir -p "$rcdir"
 if [[ -r "$rcfile" ]]; then
   . "$rcfile"
 elif [[ -f "$rcfile" ]]; then
@@ -32,29 +32,39 @@ else
   echo "No config file detected!"
 fi
 
+## brilliant idea, if gettext doesn't exist just echo the args
+## makepkg is some fantastic inspiration even if it's ugly
+if [[ ! -x "$(type -p gettext)" ]]; then
+  gettext() {
+    echo "$@"
+  }
 ## check for automagic, turn on verbosity by default
-(( automagic )) && verbose=1
+(( ! automagic )) && verbose=1
 
 ## if verbose is on, define verbose(). if off, define broken()
 ## this way, testing for verbose is only done a single time
 ## probably a better way to do this, but we'll get around to it later
-if (( verbose )); then
+if (( ! verbose )); then
   ## i would like to incorporate some gettext action in here
   printf "%s\n\t%s\n\t%s\n" "Verbose reporting is on!" \
     "Run this program again with -x no and -v no to turn it off." \
-    "Alternatively, use $rcfile to pre-configure all settings"
+    "Alternatively, use $rcfile to pre-configure for $USER."
 
   verbose() {
-      local info="$1"; shift
-      printf "%s\t%s\n" "==> $(gettext "$info": "$@")"
+    ## verbose has no special return value associated with it
+    ## sometimes we call it to print extra info
+    ## sometimes it prints errors. return accordingly
+    local info="$1"; shift
+    printf "%s\t%s\n" "==> $(gettext "$info": "$@")"
   } >&2
   ## probably unnecessary to do
   broken() { : } &>/dev/null
 else
   broken() {
-    local info="$1"; shift
-    printf "%s\n\t%s\n" "==> $(gettext "Something is wrong"...)" \
-      "$(gettext "Try again with -v\n" "PROBLEM: $info" "$@")"
+    ## broken() always returns 1 because we _probably_ want to exit 
+    local mess="$1"; shift
+    printf "%s\n\t%s\n" "==> $(gettext "Something is wrong..." \
+      "Try again with -v\n" "PROBLEM: $mess" "$@")"
     return 1
   } >&2
   ## again, likely unnecessary
@@ -113,16 +123,16 @@ check_arch() {
   else 
     ## so they never set hib_arch
     broken "Unspecified architecture."
-    verbose "WARNING" "Architecture has not been specified.\n" \
+    verbose "ERROR" "Architecture has not been specified.\n" \
       "\tPlease specify it with -a \`uname -m\`"
 
-    ## TODO: can i combine this together somehow?
-
     ## but i can still try to set it to something sane
-    (( automagic )) && {
+    if (( automagic )); then
       hib_arch="$(uname -m)"
       verbose "INFO" "Using $hib_arch instead..."
-    }
+    else return 2
+    fi
+
   fi
 }
 
@@ -131,12 +141,12 @@ check_dir() {
   local d="$1"
   ## make sure it's a directory
   if [[ -d "$d" ]]; then
-    ## make sure it is writable, or cry about it
-    [[ -w "$d" ]] || {
+    ## make sure it is r/w, or cry about it
+    [[ -r "$d" && -w "$d" ]] || {
       broken "Bad directory."
       verbose "ERROR" "$d does not exist or is not writable!"
       ##if automagic, and current dir is writable, use it
-      if (( automagic )) && [[ -w "$PWD"]]; then
+      if (( automagic )) && [[ -r "$PWD" &&  -w "$PWD"]]; then
 
         ## TODO: does this need to be a case?
 
@@ -151,8 +161,13 @@ check_dir() {
             verbose "INFO" "Using $hib_torrent_dir instead..."
             d="hib_torrent_dir"
             ;;
+          rcdir)
+            rcdir="$PWD/humblepie"
+            verbose "INFO" "Using $rcdir instead..."
+            d="rcdir"
+            ;;
           *)
-            verbose "ERROR" "$d should only be hib_dir or hib_torrent_dir!"
+            verbose "ERROR" "Pass a proper value for \$d."
             return 1
             ;;
         esac
@@ -197,60 +212,11 @@ get_list() {
     grep files|grep -v webseed|cut -d'/' -f4|cut -d'?' -f1>"$k.txt"
 }
 
-download_file() {
-  ## new try at downloading
-  # download command
-  local dlcmd="$1"
-  # URL of the file
-  local url="$2"
-  # destination file
-  local file="$3"
-  # temporary download file, default to last component of the URL
-  # but the last component isn't always the real file!
-  # local dlfile="${url##*/}"
-
-  # replace %o by the temporary dlfile if it exists
-  if [[ $dlcmd = *%o* ]]; then
-    dlcmd=${dlcmd//\%o/\"$file.part\"}
-    dlfile="$file.part"
-  fi
-  # add the URL, either in place of %u or at the end
-  if [[ $dlcmd = *%u* ]]; then
-    dlcmd=${dlcmd//\%u/\"$url\"}
-  else
-    dlcmd="$dlcmd \"$url\""
-  fi
-
-  local ret=0
-  eval "$dlcmd || ret=\$?"
-  if (( ret )); then
-    [[ ! -s "$dlfile" ]] && rm -f -- "$dlfile"
-    return $ret
-  fi
-
-  # rename the temporary download file to the final destination
-  if [[ $dlfile != "$file" ]]; then
-    mv -f "$SRCDEST/$dlfile" "$SRCDEST/$file"
-  fi
-}
-
-
 check_sum() {
-  ## verify how to use md5sum properly to prevent printing filename or `-'
-  local g="$1"
-  ## if checksumming is enabled, then...
-  if (( check_sum )); then
-    ## set the md5sum (md5sum prints the filename too, need to quiet it =\)
-    hib_game_md5sum="$(md5sum "$g")"
-    ## TODO: generate "${hib_md5[@]}"
-    ## verify the new md5 against the md5 array or cry about it
-    [[ "$hib_game_md5sum" == "${hib_md5[$g]" ]] || {
-      broken "MD5 did not match."
-      verbose "ERROR" "$hib_game_md5sum does not match ${hib_md5[$g]}"
-    }
-    verbose "INFO" "$hib_game_md5sum == ${hib_md5[$g]}"
-    verbose "INFO" "MD5 for $g was correct."
-  fi
+  local game="$1"
+  local list="$2"
+  md5="$(md5sum "$1")"
+  grep "$md5" "$list" || return 2
 }
 
 # vim: ft=sh sw=2 sts=2 et
