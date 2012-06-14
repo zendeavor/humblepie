@@ -153,12 +153,11 @@ check_arch() {
 }
 
 check_dir() {
-  d="$1"
-  if [[ -d "${d}" ]]; then
+  local d="$1"
+  if [[ -n "${d}" && -d "${d}" ]]; then
     [[ -w "${d}" ]] || {
       broken "Bad directory."
       verbose "ERROR" "${d} does not exist or is not writable!"
-      exit 1
       [[ "${automagic}" == "y" && -w "$PWD"]] && {
         case "${d}" in
           hib_dir)
@@ -191,7 +190,6 @@ dl_game() {
   local uri
   # uri="$(curl -s http://www.humblebundle.com/downloads?key="${!hib_key}" \
   #   | grep "${game}")"
-  uri="http://files.humblebundle.com/${hib_game}?key=${!hib_key}"
   case "${dl_method}" in
     # torrent)
     #   [[ -x "$(type -p ${torrent_bin})" ]] || {
@@ -214,12 +212,11 @@ dl_game() {
     #     })
     #     ;;
     http)
-      uri="${uri##*data-web\=\'}"
-      uri="${uri%%\'*}" 
-      [[ -f "${game}.part" ]] &&
+      uri="http://files.humblebundle.com/${hib_game}?key=${hib_key}"
+      [[ -f "${hib_dir}/${hib_game}.part" ]] && {
         verbose "INFO" "Downloading ${hib_game}"
-        curl -o "${hib_game}.part" "${http_dl_opts}" "${uri}"
-      mv "${hib_game}.part" "${hib_dir}"
+        curl -o "${hib_dir}/${hib_game}.part" "${curl_dl_opts}" "${uri}"
+      }
       ;;
     *) 
       broken "No download method specified."
@@ -229,6 +226,7 @@ dl_game() {
 }
 
 check_sum() {
+  ## verify how to use md5sum properly to prevent printing filename or `-'
   local g="$1"
   [[ "${check_sum}" == "y" ]] && {
     hib_game_md5sum="$(md5sum "${g}")"
