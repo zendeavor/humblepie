@@ -116,37 +116,6 @@ check_key() {
   done
 }
 
-## i don't think checking this architecture is meaningful anymore
-# check_arch() {
-#   arch="$1"
-#   ## make sure hib_arch is set; then...
-#   if [[ -n "$arch" ]]; then
-#     ## ensure its value is legal in my context or cry about it
-#     inarray "$arch" "${architectures[@]}" || ret="$?"
-#     broken "Bad architecture." || {
-#     if (( ret )); then
-#       verbose "WARNING" "Invalid value for hib_arch.\n" \
-#         "\tValid values are ${!architectures[@]}" \
-#         "\t\`uname -m\` should return the correct information."
-#     fi
-#     }
-#   else 
-#     ## so they never set hib_arch
-#     broken "Unspecified architecture." ||
-#       verbose "ERROR" "Architecture has not been specified.\n" \
-#         "\tPlease specify it with -a \`uname -m\`"
-#   ## TODO: find a better way to do the automagic things
-#   ## probably similar to the way we do verbose
-
-#   ## but i can still try to set it to something sane
-#   automage && {
-#     hib_arch="$(uname -m)"
-#     verbose "INFO" "Using $hib_arch instead..."
-#   }
-#   fi
-
-# }
-
 check_dir() {
   local d
   ## loop over args, we'll just call this 1 time per run
@@ -198,16 +167,16 @@ check_dir() {
 done
 }
 
-get_uri() {
-  ## TODO: generate link from this
-  ## takes hib_game and hib_key, slots it into link to get valid downloads
-  local game="$1" key="$2"; shift 2
-  local list="$key.txt"
-  # uri="$(curl -s http://www.humblebundle.com/downloads?key="${key}" \
+check_sum() {
+  local game="$1"
+  local list="$2"
+  md5="$(md5sum "$game")"
+  grep "${md5^^}" "${list^^}" || return 1
 }
 
-get_list() {
+generate_list() {
   local key="$1"
+  local file="${key}.txt"
   ## trying to save these files to avoid redownloading
   ## this is a list of raw filenames and should be grabbed in 2 cases:
   ## if this file does not already exist, grab it
@@ -215,23 +184,15 @@ get_list() {
   ## clobber this file, the old version is always useless
 
   ## quick and dirty way to grab a complete list of files
-  links -html-numbered-links 1 \
+  [[ ! -r $file ]] && links -html-numbered-links 1 \
     -dump http://www.humblebundle.com/downloads?key="$key" |
     grep files|grep -v webseed|cut -d'/' -f4|cut -d'?' -f1>"$key.txt"
-}
+  linecount=`wc -l <"${file}.txt"`
 
-check_sum() {
-  local game="$1"
-  local list="$2"
-  md5="$(md5sum "$1")"
-  grep "$md5" "$list" || return 1
-}
-
-generate_list() {
-  local file="$1"
+  declare -A listarr
   while read -r line; do
     ## generate a numbered list
-    for (( i=1; i<`wc -l $file`; i++ )); do
+    for (( i=1; i<"$linecount"; i++ )); do
       listarr+=( ["${i}. "]="$line" )
     done
   done <$file
