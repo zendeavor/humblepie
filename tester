@@ -3,18 +3,22 @@
 # set -x
 
 # . ./humblepie.rc
-count=0
 declare -a list
 while read -r line; do
-  (( count++ ))
   # count+=("$line")
   list+=("$line")
 done <list.txt
 ## generate a numbered list
-for (( i=1; i<="$count"; i++ )); do
-  list="${list[${i:-1}]}"
-  printf "%s.\t%s\n" "$i" "${list}"
+for (( i=1; i<="${#list[@]}"; i++ )); do
+  # (( i-- ))
+  printf "%s.\t%s\n" "${i}" "${list[$((i-1))]}"
 done
+# echo "${#list[@]}"
+# print_array_with_index() {
+#   local arr="$1"
+#   for $arr; do
+#     printf "%s.\t%s" "$"
+# }
 # echo "${list[@]}"
 # echo $count
 # echo $list
