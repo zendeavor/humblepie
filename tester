@@ -14,7 +14,7 @@ done <list.txt
 #   printf "%s.\t%s\n" "$i" "${list[$((i-1))]}"
 # done
 f='printf "%s.\t%s\n" "$i" "${list[$i-1]}" 1>&66'
-for ((i=0;++i<="${#list[@]}";$((`eval "$f"`))));do :;done 66>&1
+for ((i=0;++i<="$(($((`eval "$f"`)), ${#list[@]}))";));do :;done 66>&1
 # echo "${#list[@]}"
 # print_array_with_index() {
 #   local arr="$1"
