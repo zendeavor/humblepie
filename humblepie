@@ -180,8 +180,8 @@ check_sum() {
 }
 
 generate_list() {
-  local key="$1" linecount=0
-  local file="${key}.txt"
+  local key="$1"
+  local file="${hib_bundle}-${USER}.txt"
   ## trying to save these files to avoid redownloading
   ## this is a list of raw filenames and should be grabbed in 2 cases:
   ## if this file does not already exist, grab it
@@ -189,18 +189,19 @@ generate_list() {
   ## clobber this file, the old version is always useless
 
   ## quick and dirty way to grab a complete list of files
-  [[ ! -r $file ]] && links -dump "$filelistlink" | grep files |
-    grep -v webseed | cut -d'/' -f4 | cut -d'?' -f1 > "$key.txt"
-  ## generate a linecount, simulating `wc -l <$file`
-  ## this linecount is useful to generate the numbered list later
-  while read -r; do
-    (( linecount++ ))
-  done <$file
-  declare -A listarr
+  [[ ! -r $file ]] && links -html-numbered-links 1 \
+    -dump "$filelistlink" | grep files | grep -v webseed |
+    cut -d'/' -f4 | cut -d'?' -f1 > "$file"
+  ## this list is multipurpose
+  declare -a list
   while read -r line; do
+    list+=( "$line" )
+  done <$file
     ## generate a numbered list
-    for (( i=1; i<"$linecount"; i++ )); do
-      listarr+=( ["${i}. "]="$line" )
+    ## ${#list[@]} is the number of elements in the array 'list'
+    for (( i=1; i<"${#list[@]}"; i++ )); do
+      ## print the list, prefixed with numbers, starting from 1 instead of 0
+      printf "%s\t%s\n" "${i}." "${list[$((i-1))]}"
     done
   done <$file
 }
