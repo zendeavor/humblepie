@@ -18,6 +18,7 @@ rcdir="${XDG_CONFIG_HOME}/humblepie"
 (( ! EUID )) && {
   ## check if they used root on purpose
   if  (( ! asroot )); then
+    automagic=0
     ## if $rcfile doesn't exist, we're going to use /etc instead
     ## they're already root at this point, so further checking is moot
     [[ ! -f "$rcfile" ]] && rcdir="/etc/humblepie"
@@ -37,16 +38,11 @@ fi
 
 ## brilliant idea, if gettext doesn't exist just echo the args
 ## makepkg is some fantastic inspiration even if it's ugly
-if [[ ! -x "$(type -p gettext)" ]]; then
-  gettext() {
-    echo "$@"
-  }
+[[ ! -x "$(type -p gettext)" ]] && gettext() { echo "$@"; }
 ## if automagic is enabled let's setup a passthrough function
 ## check for automagic, turn on verbosity by default
-if (( ! automagic )); then verbose=1; automage() { "$@"; }
-else automagic() { false; } &>/dev/null
-fi
-
+if (( ! automagic )); then verbose=1; automage() { "$@"; } 
+else automagic() { false "$@"; } &>/dev/null; fi
 
 ## if verbose is on, define verbose(). if off, define broken()
 ## this way, testing for verbose is only done a single time
@@ -69,7 +65,7 @@ if (( ! verbose )); then
   ## .. only executes if verbose() { false; }; otherwise..
   ## .. i can do `broken || cmd` if necessary
   ## probably unnecessary to do
-  broken() { false; } &>/dev/null
+  broken() { false "$@"; } &>/dev/null
 else
   broken() {
     ## broken() always returns 1 because we _probably_ want to exit 
@@ -80,7 +76,7 @@ else
   } >&2
   ## same applies here as did to broken() { false; }
   ## again, likely unnecessary
-  verbose() { false; } &>/dev/null
+  verbose() { false "$@"; } &>/dev/null
 fi
 
 inarray() {
@@ -102,11 +98,11 @@ check_key() {
     ## this is an indirect expansion to test if any $hibkey_* expanded
     ## ${!var} will equal the value of each $hibkey_* in turn
     ## if hibkey_foo="barbazquux" then ${!var} expands to "barbazquux"
-    ## $var would be "hibkey_foo
+    ## $var would be "hibkey_foo"
     ## only populate array if there is a key defined
-    if [[ -n ${!var} ]]; then
       ## ["hibkey_foo"]="barbazquux"
-      bundlekeys+=( ["$var"]="${!var}" ) 
+    bundlekeys+=( ["$var"]="${!var}" ) 
+    if [[ -n ${!bundlekeys@} ]]; then
       verbose "INFO" "Key ${!var} for $var found."
     else 
       ## if no key found, cry
@@ -119,7 +115,6 @@ check_key() {
 
 check_arch() {
   arch="$1"
-  local ret=0
   ## make sure hib_arch is set; then...
   if [[ -n "$arch" ]]; then
     ## ensure its value is legal in my context or cry about it
@@ -140,7 +135,7 @@ check_arch() {
   ## probably similar to the way we do verbose
 
   ## but i can still try to set it to something sane
-  (( ! automagic )) && {
+  automage && {
     hib_arch="$(uname -m)"
     verbose "INFO" "Using $hib_arch instead..."
   }
@@ -164,33 +159,32 @@ check_dir() {
           ## TODO: find out if this should be indirect, it's obtuse
           ## if $1 == /foo, and d == $1, $d == /foo.
           ## but ${!d} would be like $/foo i think
+          ## $d will be one of these at a time
+          ## case will find this setting and then convert $d to the one i need
+          ## when a match is found, the case ends for this iteration of loop
           case "$d" in
             hib_dir)
-              dir_hib="$PWD/humbleindiebundle/"
-              verbose "INFO" "Using $dir_hib instead..."
-              d="dir_hib"
+              d="$PWD/humbleindiebundle/"
+              verbose "INFO" "Using $hib_dir instead..."
+              hib_dir="$d"
               ;;
             hib_torrent_dir)
-              dir_torrent_hib="$PWD/humbleindiebundle/torrents/"
-              verbose "INFO" "Using $dir_torrent_hib instead..."
-              d="dir_torrent_hib"
+              d="$PWD/humbleindiebundle/torrents/"
+              hib_torrent_dir="$d"
+              verbose "INFO" "Using $hib_torrent_dir instead..."
               ;;
             rcdir)
-              dir_rc="$PWD/humblepie"
+              d="$PWD/humblepie"
+              rcdir="$d"
               verbose "INFO" "Using $rcdir instead..."
-              d="dir_rc"
               ;;
             *)
               verbose "ERROR" "Pass a proper value for \$d."
               return 1
               ;;
           esac
-          ## this indirection is probably fluff, again
-          ## i use it in order to write a single call to mkdir
-          ## realistically, i'm still calling it once per automagic'd dir
           ## $d does not get clobbered because the loop runs fully per arg
-          mkdir -p "${!d}"
-        fi
+          mkdir -p "$d"
       }
     else
       broken "Unspecified directory." ||
@@ -203,10 +197,9 @@ done
 get_uri() {
   ## TODO: generate link from this
   ## takes hib_game and hib_key, slots it into link to get valid downloads
-  local game="$1"
-  local key="$2"
-  # uri="$(curl -s http://www.humblebundle.com/downloads?key="${!hib_key}" \
+  local game="$1" key="$2"; shift 2
   local list="$key.txt"
+  # uri="$(curl -s http://www.humblebundle.com/downloads?key="${key}" \
 }
 
 get_list() {
