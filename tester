@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # vim: ft=sh
-set -x
+# set -x
 
 # . ./humblepie.rc
 count=0
@@ -12,12 +12,12 @@ while read -r line; do
 done <list.txt
 ## generate a numbered list
 for (( i=1; i<="$count"; i++ )); do
-  # list="${list[${i:-1}]}"
-  printf "%s.\t%s\n" "$i" "${!list}"
+  list="${list[${i:-1}]}"
+  printf "%s.\t%s\n" "$i" "${list}"
 done
 # echo "${list[@]}"
-echo $count
-echo $list
+# echo $count
+# echo $list
 
 # while read -r line; do
 # done <list.txt
@@ -71,5 +71,4 @@ echo $list
 #     echo $i
 #   fi
 # done
-
 
