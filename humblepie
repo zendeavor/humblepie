@@ -110,35 +110,29 @@ check_arch() {
   ## make sure hib_arch is set; then...
   if [[ -n "$arch" ]]; then
     ## ensure its value is legal in my context or cry about it
-    [[ "$arch" =~ "i.86" || "$arch" == "x86_64" ]] || {
+    for a in "${architectures[@]}"; do
+    [[ "$a" == "$arch" ]] && 
       broken "Bad architecture." ||
         verbose "WARNING" "Invalid value for hib_arch.\n" \
-          "\tValid values are i386, i686, x86_64" \
+          "\tValid values are ${!architectures[@]}" \
           "\t\`uname -m\` should return the correct information."
-
-      ## TODO: find a better way to do the automagic things
-      ## probably similar to the way we do verbose
-
-      ## if automagic is on, set hib_arch to something i expect
-      if (( ! automagic )); then
-        hib_arch="$(uname -m)"
-        verbose "INFO" "Using $hib_arch instead..."
-      fi
-    }
+    done
   else 
     ## so they never set hib_arch
     broken "Unspecified architecture." ||
       verbose "ERROR" "Architecture has not been specified.\n" \
         "\tPlease specify it with -a \`uname -m\`"
-
-    ## but i can still try to set it to something sane
-    if (( ! automagic )); then
-      hib_arch="$(uname -m)"
-      verbose "INFO" "Using $hib_arch instead..."
-    else return 2
-    fi
-
   fi
+
+  ## TODO: find a better way to do the automagic things
+  ## probably similar to the way we do verbose
+
+  ## but i can still try to set it to something sane
+  ## if automagic is on, set hib_arch to something i expect
+  (( ! automagic )) && {
+    hib_arch="$(uname -m)"
+    verbose "INFO" "Using $hib_arch instead..."
+  }
 }
 
 check_dir() {

@@ -1,16 +1,22 @@
 #!/usr/bin/env bash
 # vim: ft=sh
-# set -x
-
-a="/foo/bar"
-b="a"
-c="${!a@}"
-d="${!b}"
-e="${!c}"
-
-echo "a:$a b:$b c:$c d:$d e:$e"
+set -x
 
 # . ./humblepie.rc
+arch="foo"
+architectures=('bar' 'baz' 'quux' 'foo')
+# for (( i=0;i<"${#architectures[@]}";i++ )); do
+for a in "${architectures[@]}"; do
+  [[ "$a" == "$arch" ]] && break
+  echo no
+done
+# a="/foo/bar"
+# b="a"
+# c="${!a@}"
+# d="${!b}"
+# e="${!c}"
+
+# echo "a:$a b:$b c:$c d:$d e:$e"
 # declare -A bundlekeys
 # for var in "${!hibkey_@}"; do
 #   if [[ -n "$var" ]]; then 
