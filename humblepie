@@ -41,8 +41,12 @@ if [[ ! -x "$(type -p gettext)" ]]; then
   gettext() {
     echo "$@"
   }
+## if automagic is enabled let's setup a passthrough function
 ## check for automagic, turn on verbosity by default
-(( ! automagic )) && verbose=1
+if (( ! automagic )); then verbose=1; automage() { "$@"; }
+else automagic() { false; } &>/dev/null
+fi
+
 
 ## if verbose is on, define verbose(). if off, define broken()
 ## this way, testing for verbose is only done a single time
@@ -79,6 +83,14 @@ else
   verbose() { false; } &>/dev/null
 fi
 
+inarray() {
+  local n="$1" a="$2"; shift 2
+  for a; do 
+    [[ "$n" = "$h" ]] && return
+  done
+  return 1
+}
+
 check_key() {
   ## grab the key
   # local k="$1" ret=0
@@ -106,33 +118,34 @@ check_key() {
 }
 
 check_arch() {
-  local arch="$1"
+  arch="$1"
+  local ret=0
   ## make sure hib_arch is set; then...
   if [[ -n "$arch" ]]; then
     ## ensure its value is legal in my context or cry about it
-    for a in "${architectures[@]}"; do
-    [[ "$a" == "$arch" ]] && 
-      broken "Bad architecture." ||
-        verbose "WARNING" "Invalid value for hib_arch.\n" \
-          "\tValid values are ${!architectures[@]}" \
-          "\t\`uname -m\` should return the correct information."
-    done
+    inarray "$arch" "${architectures[@]}" || ret="$?"
+    broken "Bad architecture." || {
+    if (( ret )); then
+      verbose "WARNING" "Invalid value for hib_arch.\n" \
+        "\tValid values are ${!architectures[@]}" \
+        "\t\`uname -m\` should return the correct information."
+    fi
+    }
   else 
     ## so they never set hib_arch
     broken "Unspecified architecture." ||
       verbose "ERROR" "Architecture has not been specified.\n" \
         "\tPlease specify it with -a \`uname -m\`"
-  fi
-
   ## TODO: find a better way to do the automagic things
   ## probably similar to the way we do verbose
 
   ## but i can still try to set it to something sane
-  ## if automagic is on, set hib_arch to something i expect
   (( ! automagic )) && {
     hib_arch="$(uname -m)"
     verbose "INFO" "Using $hib_arch instead..."
   }
+  fi
+
 }
 
 check_dir() {
@@ -146,7 +159,7 @@ check_dir() {
         broken "Bad directory." ||
           verbose "ERROR" "$d does not exist or you lack permissions!"
         ## if automagic, and current dir is writable, use it
-        if (( ! automagic )) && [[ -r "$PWD" &&  -w "$PWD"]]; then
+         automagic && [[ -r "$PWD" &&  -w "$PWD"]]; then
 
           ## TODO: find out if this should be indirect, it's obtuse
           ## if $1 == /foo, and d == $1, $d == /foo.
@@ -182,7 +195,7 @@ check_dir() {
     else
       broken "Unspecified directory." ||
         verbose "WARNING" "No download directory specified.\n" \
-          "\tUsing current directory instead..."
+          # "\tUsing current directory instead..."
     fi
 done
 }
