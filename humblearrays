@@ -8,8 +8,7 @@ architectures=('i386' 'i686' 'x86_64')
 declare -Ar hib1 hib2 hib3 hib4 hib5
 declare -Ar hibandroid1 hibandroid2
 declare -Ar hibbotanicula hibfrozenbyte hibfrozensynapse
-declare -Ar hibmojang 
-ibvoxatron hibintroversion
+declare -Ar hibmojang hibvoxatron hibintroversion
 
 hib1=( 
       ["aquaria"]="aquaria"

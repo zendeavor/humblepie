@@ -245,6 +245,7 @@ while getopts "a:b:d:g:i:k:o:r:t:u:U:v:chIV" opt; do
       # interactive="y"
       ;;
     k) ## specify a key manually, not implemented
+      hib_check_key=0
       hib_key="${OPTARG}"
       ;;
     m) ## set download method
