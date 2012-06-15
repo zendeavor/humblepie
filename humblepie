@@ -44,9 +44,8 @@ fi
 [[ ! -x "$(type -p gettext)" ]] && gettext() { echo "$@"; }
 ## if automagic is enabled let's setup a passthrough function
 ## check for automagic, turn on verbosity by default
-if (( ! automagic )); then verbose=1; automage() { "$@"; } 
-else automagic() { false "$@"; } &>/dev/null; fi
-
+if (( ! automagic )); then verbose=1; automage() { :; } 
+else automagic() { false; } &>/dev/null; fi
 ## if verbose is on, define verbose(). if off, define broken()
 ## this way, testing for verbose is only done a single time
 ## probably a better way to do this, but we'll get around to it later
@@ -127,37 +126,42 @@ check_dir() {
         broken "Bad directory." ||
           verbose "ERROR" "$d does not exist or you lack permissions!"
         ## if automagic, and current dir is writable, use it
-         automagic && [[ -r "$PWD" &&  -w "$PWD"]]; then
-
-          ## TODO: find out if this should be indirect, it's obtuse
-          ## if $1 == /foo, and d == $1, $d == /foo.
-          ## but ${!d} would be like $/foo i think
-          ## $d will be one of these at a time
-          ## case will find this setting and then convert $d to the one i need
-          ## when a match is found, the case ends for this iteration of loop
-          case "$d" in
-            hib_dir)
-              d="$PWD/humbleindiebundle/"
-              verbose "INFO" "Using $hib_dir instead..."
-              hib_dir="$d"
-              ;;
-            hib_torrent_dir)
-              d="$PWD/humbleindiebundle/torrents/"
-              hib_torrent_dir="$d"
-              verbose "INFO" "Using $hib_torrent_dir instead..."
-              ;;
-            rcdir)
-              d="$PWD/humblepie"
-              rcdir="$d"
-              verbose "INFO" "Using $rcdir instead..."
-              ;;
-            *)
-              verbose "ERROR" "Pass a proper value for \$d."
-              return 1
-              ;;
-          esac
-          ## $d does not get clobbered because the loop runs fully per arg
-          mkdir -p "$d"
+         automagic && {
+          [[ -r "$PWD" && -w "$PWD"]] || {
+            broken "$PWD is not r/w." || { 
+              verbose "ERROR" \
+                "$PWD must be r/w to enable automagic to continue.\n" \
+                "Run this script in a directory you have permissions in, " \
+                "or setup your config file appropriately."
+              }
+          }
+            ## $d will be one of these at a time
+            ## case will find this setting and convert $d to the one i need
+            ## when a match is found, the case ends for this iteration of loop
+            case "$d" in
+              hib_dir)
+                d="$PWD/humbleindiebundle/"
+                verbose "INFO" "Using $hib_dir instead..."
+                hib_dir="$d"
+                ;;
+              hib_torrent_dir)
+                d="$PWD/humbleindiebundle/torrents/"
+                hib_torrent_dir="$d"
+                verbose "INFO" "Using $hib_torrent_dir instead..."
+                ;;
+              rcdir)
+                d="$PWD/humblepie"
+                rcdir="$d"
+                verbose "INFO" "Using $rcdir instead..."
+                ;;
+              *)
+                verbose "ERROR" "Pass a proper value for \$d."
+                return 1
+                ;;
+            esac
+            ## $d does not get clobbered because the loop runs fully per arg
+            mkdir -p "$d" 
+          }
       }
     else
       broken "Unspecified directory." ||
@@ -175,7 +179,7 @@ check_sum() {
 }
 
 generate_list() {
-  local key="$1"
+  local key="$1" linecount=0
   local file="${key}.txt"
   ## trying to save these files to avoid redownloading
   ## this is a list of raw filenames and should be grabbed in 2 cases:
@@ -184,11 +188,13 @@ generate_list() {
   ## clobber this file, the old version is always useless
 
   ## quick and dirty way to grab a complete list of files
-  [[ ! -r $file ]] && links -html-numbered-links 1 \
-    -dump http://www.humblebundle.com/downloads?key="$key" |
-    grep files|grep -v webseed|cut -d'/' -f4|cut -d'?' -f1>"$key.txt"
-  linecount=`wc -l <"${file}.txt"`
-
+  [[ ! -r $file ]] && links -dump "$filelistlink" | grep files |
+    grep -v webseed | cut -d'/' -f4 | cut -d'?' -f1 > "$key.txt"
+  ## generate a linecount, simulating `wc -l <$file`
+  ## this linecount is useful to generate the numbered list later
+  while read -r; do
+    (( linecount++ ))
+  done <$file
   declare -A listarr
   while read -r line; do
     ## generate a numbered list
