@@ -74,6 +74,7 @@ else
       "Try again with -v\n" "PROBLEM: $mess" "$@")"
     return 1
   } >&2
+  ## same applies here as did to broken() { false; }
   ## again, likely unnecessary
   verbose() { false; } &>/dev/null
 fi
@@ -153,19 +154,18 @@ check_dir() {
         ## if automagic, and current dir is writable, use it
         if (( ! automagic )) && [[ -r "$PWD" &&  -w "$PWD"]]; then
 
-          ## TODO: does this need to be a case?
-          ## NOTE: probably, i'm trying to check more dirs
-
           ## TODO: find out if this should be indirect, it's obtuse
-          case "${!d}" in
+          ## if $1 == /foo, and d == $1, $d == /foo.
+          ## but ${!d} would be like $/foo i think
+          case "$d" in
             hib_dir)
               dir_hib="$PWD/humbleindiebundle/"
               verbose "INFO" "Using $dir_hib instead..."
               d="dir_hib"
               ;;
             hib_torrent_dir)
-              hib_torrent_dir="$PWD/humbleindiebundle/torrents/"
-              verbose "INFO" "Using $hib_torrent_dir instead..."
+              dir_torrent_hib="$PWD/humbleindiebundle/torrents/"
+              verbose "INFO" "Using $dir_torrent_hib instead..."
               d="dir_torrent_hib"
               ;;
             rcdir)
@@ -178,6 +178,10 @@ check_dir() {
               return 1
               ;;
           esac
+          ## this indirection is probably fluff, again
+          ## i use it in order to write a single call to mkdir
+          ## realistically, i'm still calling it once per automagic'd dir
+          ## $d does not get clobbered because the loop runs fully per arg
           mkdir -p "${!d}"
         fi
       }
@@ -185,11 +189,6 @@ check_dir() {
       broken "Unspecified directory." ||
         verbose "WARNING" "No download directory specified.\n" \
           "\tUsing current directory instead..."
-
-      ## TODO: is this really necessary? should i set both dirs to this?
-      ## maybe do it if automagic is on
-
-      directory="$PWD"
     fi
 done
 }
@@ -201,9 +200,6 @@ get_uri() {
   local key="$2"
   # uri="$(curl -s http://www.humblebundle.com/downloads?key="${!hib_key}" \
   local list="$key.txt"
-  if [[ -n "$use_torrent" ]]; then
-    ## this is index.html of the downloads page for specified key
-  fi
 }
 
 get_list() {
@@ -224,6 +220,6 @@ check_sum() {
   local game="$1"
   local list="$2"
   md5="$(md5sum "$1")"
-  grep "$md5" "$list" || return 2
+  grep "$md5" "$list" || return 1
 }
 
