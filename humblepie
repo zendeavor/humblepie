@@ -25,12 +25,13 @@ rcdir="${XDG_CONFIG_HOME}/humblepie"
     ## if expected $rcfile doesn't exist, we're going to use /etc instead
     ## they're already root at this point, so further checking is moot
     [[ -f "${rcdir}/humblepie.rc" ]] || rcdir="/etc/humblepie"
+    rcfile="$rcdir/humblepie.rc"
   fi
 }
 
+## really need to figure this bitch out
+## i have to set rcfile after verifying the directory is okay
 rcfile="$rcdir/humblepie.rc"
-## i should be able to send this to check_dir()
-# [[ -d "$rcdir" ]] || mkdir -p "$rcdir"
 if [[ -r "$rcfile" ]]; then
   . "$rcfile"
 elif [[ -f "$rcfile" ]]; then
@@ -67,7 +68,7 @@ if (( ! verbose )); then
   ## .. only executes if verbose() { false; }; otherwise..
   ## .. i can do `broken || cmd` if necessary
   ## probably unnecessary to do
-  broken() { false "$@"; } &>/dev/null
+  broken() { false; } &>/dev/null
 else
   broken() {
     ## broken() always returns 1 because we _probably_ want to exit 
@@ -78,13 +79,13 @@ else
   } >&2
   ## same applies here as did to broken() { false; }
   ## again, likely unnecessary
-  verbose() { false "$@"; } &>/dev/null
+  verbose() { false; } &>/dev/null
 fi
 
 inarray() {
   local n="$1" a="$2"; shift 2
   for a; do 
-    [[ "$n" = "$h" ]] && return
+    [[ "$n" == "$a" ]] && return
   done
   return 1
 }

@@ -4,10 +4,24 @@ set -x
 
 # . ./humblepie.rc
 count=0
-while read -r; do
+declare -a list
+while read -r line; do
   (( count++ ))
+  # count+=("$line")
+  list+=("$line")
 done <list.txt
-echo "$count"
+## generate a numbered list
+for (( i=1; i<="$count"; i++ )); do
+  # list="${list[${i:-1}]}"
+  printf "%s.\t%s\n" "$i" "${!list}"
+done
+# echo "${list[@]}"
+echo $count
+echo $list
+
+# while read -r line; do
+# done <list.txt
+# echo "$count"
 # for lines; do
 #   count+="$lines"
 # done <list.txt
