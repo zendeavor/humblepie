@@ -9,6 +9,9 @@
 ## covered bundles:
 ##  4, 5, frozensynapse, introversion/1/2(maybe?)
 
+## comments starting with a single octothorpe are experimental code
+## more than one octothorpe signifies detail or instructional comments
+
 asroot=0
 automagic=0
 hib_check_key=1
@@ -19,9 +22,9 @@ rcdir="${XDG_CONFIG_HOME}/humblepie"
   ## check if they used root on purpose
   if  (( ! asroot )); then
     automagic=0
-    ## if $rcfile doesn't exist, we're going to use /etc instead
+    ## if expected $rcfile doesn't exist, we're going to use /etc instead
     ## they're already root at this point, so further checking is moot
-    [[ ! -f "$rcfile" ]] && rcdir="/etc/humblepie"
+    [[ -f "${rcdir}/humblepie.rc" ]] || rcdir="/etc/humblepie"
   fi
 }
 
@@ -113,35 +116,36 @@ check_key() {
   done
 }
 
-check_arch() {
-  arch="$1"
-  ## make sure hib_arch is set; then...
-  if [[ -n "$arch" ]]; then
-    ## ensure its value is legal in my context or cry about it
-    inarray "$arch" "${architectures[@]}" || ret="$?"
-    broken "Bad architecture." || {
-    if (( ret )); then
-      verbose "WARNING" "Invalid value for hib_arch.\n" \
-        "\tValid values are ${!architectures[@]}" \
-        "\t\`uname -m\` should return the correct information."
-    fi
-    }
-  else 
-    ## so they never set hib_arch
-    broken "Unspecified architecture." ||
-      verbose "ERROR" "Architecture has not been specified.\n" \
-        "\tPlease specify it with -a \`uname -m\`"
-  ## TODO: find a better way to do the automagic things
-  ## probably similar to the way we do verbose
+## i don't think checking this architecture is meaningful anymore
+# check_arch() {
+#   arch="$1"
+#   ## make sure hib_arch is set; then...
+#   if [[ -n "$arch" ]]; then
+#     ## ensure its value is legal in my context or cry about it
+#     inarray "$arch" "${architectures[@]}" || ret="$?"
+#     broken "Bad architecture." || {
+#     if (( ret )); then
+#       verbose "WARNING" "Invalid value for hib_arch.\n" \
+#         "\tValid values are ${!architectures[@]}" \
+#         "\t\`uname -m\` should return the correct information."
+#     fi
+#     }
+#   else 
+#     ## so they never set hib_arch
+#     broken "Unspecified architecture." ||
+#       verbose "ERROR" "Architecture has not been specified.\n" \
+#         "\tPlease specify it with -a \`uname -m\`"
+#   ## TODO: find a better way to do the automagic things
+#   ## probably similar to the way we do verbose
 
-  ## but i can still try to set it to something sane
-  automage && {
-    hib_arch="$(uname -m)"
-    verbose "INFO" "Using $hib_arch instead..."
-  }
-  fi
+#   ## but i can still try to set it to something sane
+#   automage && {
+#     hib_arch="$(uname -m)"
+#     verbose "INFO" "Using $hib_arch instead..."
+#   }
+#   fi
 
-}
+# }
 
 check_dir() {
   local d
@@ -203,7 +207,7 @@ get_uri() {
 }
 
 get_list() {
-  local k="$1"
+  local key="$1"
   ## trying to save these files to avoid redownloading
   ## this is a list of raw filenames and should be grabbed in 2 cases:
   ## if this file does not already exist, grab it
@@ -212,8 +216,8 @@ get_list() {
 
   ## quick and dirty way to grab a complete list of files
   links -html-numbered-links 1 \
-    -dump http://www.humblebundle.com/downloads?key="$k" |
-    grep files|grep -v webseed|cut -d'/' -f4|cut -d'?' -f1>"$k.txt"
+    -dump http://www.humblebundle.com/downloads?key="$key" |
+    grep files|grep -v webseed|cut -d'/' -f4|cut -d'?' -f1>"$key.txt"
 }
 
 check_sum() {
@@ -223,3 +227,12 @@ check_sum() {
   grep "$md5" "$list" || return 1
 }
 
+generate_list() {
+  local file="$1"
+  while read -r line; do
+    ## generate a numbered list
+    for (( i=1; i<`wc -l $file`; i++ )); do
+      listarr+=( ["${i}. "]="$line" )
+    done
+  done <$file
+}
