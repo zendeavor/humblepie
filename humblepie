@@ -203,27 +203,26 @@ check_sum() {
 generate_list() {
   ## send the value of the chosen $hibkey_*; the rest is automagic
   local key="$1"
-  local file="${hib_bundle}-${USER}.txt"
-  local link="$3"
+  local link="$2"
+  local file="${USER}-${hib_bundle}-${key}.txt"
   ## trying to save these files to avoid redownloading
   ## this is a list of raw filenames and should be grabbed in 2 cases:
   ## if this file does not already exist, grab it
   ## if the updater is run, grab all the files again
   ## clobber these file, the old version is always useless
   
-
-  ## example format of md5sums
-  ## md5sums = www.foo.com/downloads?key=${key}#734c973b6095c56c4866c0bf8bf8a410 
+  dump="list.txt"
   links -html-numbered-links 1 \
-    -dump https://www.humblebundle.com/downloads\?key\="${key}"|grep '#'>sums.txt
-  sums="$(<sums.txt)"
+    -dump https://www.humblebundle.com/downloads\?key\="${key}"|grep '#'>$dump
   while read -r sums; do
-    # sed -e -r 's/#\s*$//'
-    sums+=("${sums%%# }")
+    [[ "${sums##*#}" && "${sums##*#}" != *:* ]] &&
+      sumslist+=("${sums##*#}")
+  done <$dump
+  printf '%s\n' "${sumslist[@]}"
+  for ((i=1;i<="${#sumslist[@]}";i++)); do
+    # [[ "${sumslist[$i-1]}" =~ [[:alnum:]] ]] &&
+      printf '%s\n' "${sumslist[$i-1]}" >>$file
   done
-  echo "${sums}"
-  echo "${sums[@]}"
-
 
   ## quick and dirty way to grab a complete list of files
   # [[ ! -r $file ]] && links -html-numbered-links 1 \

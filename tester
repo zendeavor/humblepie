@@ -3,27 +3,28 @@
 # set -x
 
 # . ./humblepie.rc
-# links -html-numbered-links 1 \
-#   -dump https://www.humblebundle.com/downloads\?key\="${key}"|grep '#'>sums.txt
+hib_bundle=55
 file="${USER}-${hib_bundle}-md5.txt" 
-# # echo "${sumsfile}"
+dump="list.txt"
+links -html-numbered-links 1 \
+  -dump https://www.humblebundle.com/downloads\?key\="${key}"|grep '#'>$dump
 while read -r sums; do
-  # sed -e -r 's/#\s*$//'
-  sums+=("${sums#*#}")
-done <sums.txt
-sed -i 's/[[:digit:]]*\s*$//' $file
-
-for ((i=1;i<="${#sums[@]}";i++)); do
-  [[ "${sums[$i-1]}" ]] &&
-    printf '%s\n' "${sums[$i-1]}" >>$file
+  [[ "${sums##*#}" && "${sums##*#}" != *:* ]] &&
+    sumslist+=("${sums##*#}")
+done <$dump
+# printf '%s\n' "${sumslist[@]}"
+rm -f $file
+for ((i=1;i<="${#sumslist[@]}";i++)); do
+  # [[ "${sumslist[$i-1]}" =~ [[:alnum:]] ]] &&
+    printf '%s\n' "${sumslist[$i-1]}" >>$file
 done
-while read -r line; do
-  i=0
-  # echo "${sums[$i]}" "$line"
-  [[ "${sums[$i]}" == $line ]]
+# while read -r line; do
+#   i=0
+#   # echo "${sums[$i]}" "$line"
+#   [[ "${sums[$i]}" == $line ]]
 
-  (( i++ ))
-done <zendeavor--md5.txt
+#   (( i++ ))
+# done <zendeavor--md5.txt
 # done <"$sumsfile"
 # echo "${sums[@]}"
 # declare -a list
