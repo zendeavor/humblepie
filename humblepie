@@ -86,7 +86,7 @@ fi
 
 inarray() {
   local n="$1" a="$2"; shift 2
-  for a; do 
+  for $a; do 
     [[ "$n" == "$a" ]] && return
   done
   return 1
@@ -96,7 +96,7 @@ check_key() {
   ## grab the key
   # local k="$1" ret=0
   ## declare the array for keys
-  declare -A bundlekeys
+  declare -a bundlekeys
   ## expand all $hibkey_* variables from rcfile if they are set
   ## the quotes and @ are important for proper expansion
   for var in "${!hibkey_@}"; do
@@ -104,21 +104,23 @@ check_key() {
     ## ${!var} will equal the value of each $hibkey_* in turn
     ## if hibkey_foo="barbazquux" then ${!var} expands to "barbazquux"
     ## $var would be "hibkey_foo"
+    ## ["hibkey_foo"]="barbazquux"
+    # bundlekeys+=( ["${var##*_}"]="${!var}" ) 
+    # if [[ ${!bundlekeys@} ]]; then
     ## only populate array if there is a key defined
-      ## ["hibkey_foo"]="barbazquux"
-    bundlekeys+=( ["$var"]="${!var}" ) 
-    if [[ -n ${!bundlekeys@} ]]; then
-      verbose "INFO" "Key ${!var} for $var found."
-    else 
+    [[ "${!hibkey_@}" ]] 
+    bundlekeys+=( "$var" ) || {
       ## if no key found, cry
-      broken "No keys discovered." ||
-        verbose "ERROR" "No keys configured.\n" \
-          "\tPlease specify a key with -k [key] or in your user's config file."
+      broken "No keys discovered."
+      verbose "ERROR" "No keys configured.\n" \
+        "\tPlease specify a key with -k [key] or in your user's config file."
       return 1
-    fi
+    }
+    verbose "INFO" "${#bundlekeys[@]} found!"
   done
 }
 
+## i think this can be rewritten with non-short-circuit ;;& case
 check_dir() {
   local d
   ## loop over args, we'll just call this 1 time per run
@@ -148,19 +150,19 @@ check_dir() {
                 d="$PWD/humbleindiebundle/"
                 verbose "INFO" "Using $hib_dir instead..."
                 hib_dir="$d"
-                ;;
+                ;;&
               hib_torrent_dir)
                 d="$PWD/humbleindiebundle/torrents/"
                 hib_torrent_dir="$d"
                 verbose "INFO" "Using $hib_torrent_dir instead..."
-                ;;
+                ;;&
               rcdir)
                 d="$PWD/humblepie"
                 rcdir="$d"
                 verbose "INFO" "Using $rcdir instead..."
                 rcfile="$rcdir/humblepie.rc"
                 [[ -f "$rcfile" ]] ||
-                ;;
+                ;;&
               *)
                 verbose "ERROR" "Pass a proper value for \$d."
                 return 1
@@ -182,8 +184,10 @@ done
 check_sum() {
   local game="$1"
   local list="$2"
-  md5="$("$md5prog" "$game")"
-  md5="${md5%%$game}"
+  md5="$("$md5prog" <"$game")"
+  ## md5sum has a really irritating habit to print "cksum   filename"
+  ## strip everything from first space to end of var
+  md5="${md5%% *}"
   while read -r sum; do
     ## capitalize all the characters and match them
     ## can't guarantee mixed case will ever match
@@ -200,11 +204,17 @@ generate_list() {
   ## send the value of the chosen $hibkey_*; the rest is automagic
   local key="$1"
   local file="${hib_bundle}-${USER}.txt"
+  local link="$3"
   ## trying to save these files to avoid redownloading
   ## this is a list of raw filenames and should be grabbed in 2 cases:
   ## if this file does not already exist, grab it
   ## if the updater is run, grab all the files again
-  ## clobber this file, the old version is always useless
+  ## clobber these file, the old version is always useless
+  
+
+  ## example format of md5sums
+  ## md5sums = www.foo.com/downloads?key=${key}#734c973b6095c56c4866c0bf8bf8a410 
+  
 
   ## quick and dirty way to grab a complete list of files
   # [[ ! -r $file ]] && links -html-numbered-links 1 \
