@@ -12,10 +12,11 @@
 ## comments starting with a single octothorpe are experimental code
 ## more than one octothorpe signifies detail or instructional comments
 
-asroot=0
-automagic=0
-hib_check_key=1
-verbose=0
+asroot="${asroot:=0}"
+automagic="${automagic:+0}"
+hib_check_key="${hib_check_key:=1}"
+md5prog="${md5prog:=md5sum}"
+verbose=${verbose:-1}
 rcdir="${XDG_CONFIG_HOME}/humblepie"
 
 (( ! EUID )) && {
@@ -25,13 +26,14 @@ rcdir="${XDG_CONFIG_HOME}/humblepie"
     ## if expected $rcfile doesn't exist, we're going to use /etc instead
     ## they're already root at this point, so further checking is moot
     [[ -f "${rcdir}/humblepie.rc" ]] || rcdir="/etc/humblepie"
-    rcfile="$rcdir/humblepie.rc"
   fi
 }
 
 ## really need to figure this bitch out
 ## i have to set rcfile after verifying the directory is okay
-rcfile="$rcdir/humblepie.rc"
+## how about in the check_dir(), just set the bastard
+## i intend to run check_dir() for _every_ invocation
+# rcfile="$rcdir/humblepie.rc"
 if [[ -r "$rcfile" ]]; then
   . "$rcfile"
 elif [[ -f "$rcfile" ]]; then
@@ -53,7 +55,7 @@ else automagic() { false; } &>/dev/null; fi
 if (( ! verbose )); then
   ## i would like to incorporate some gettext action in here
   printf "%s\n\t%s\n\t%s\n" "Verbose reporting is on!" \
-    "Run this program again with -x no and -v no to turn it off." \
+    "Run this program again with -x and -v to turn it off." \
     "Alternatively, use $rcfile to pre-configure for $USER."
 
   verbose() {
@@ -111,7 +113,8 @@ check_key() {
       ## if no key found, cry
       broken "No keys discovered." ||
         verbose "ERROR" "No keys configured.\n" \
-          "Please specify a key with -k [key] or in your user's config file."
+          "\tPlease specify a key with -k [key] or in your user's config file."
+      return 1
     fi
   done
 }
@@ -128,12 +131,13 @@ check_dir() {
           verbose "ERROR" "$d does not exist or you lack permissions!"
         ## if automagic, and current dir is writable, use it
          automagic && {
-          [[ -r "$PWD" && -w "$PWD"]] || {
+          [[ -r "$PWD" && -w "$PWD" ]] || {
             broken "$PWD is not r/w." || { 
               verbose "ERROR" \
                 "$PWD must be r/w to enable automagic to continue.\n" \
-                "Run this script in a directory you have permissions in, " \
+                "\tRun this script in a directory you have permissions in, " \
                 "or setup your config file appropriately."
+              return 1
               }
           }
             ## $d will be one of these at a time
@@ -154,6 +158,8 @@ check_dir() {
                 d="$PWD/humblepie"
                 rcdir="$d"
                 verbose "INFO" "Using $rcdir instead..."
+                rcfile="$rcdir/humblepie.rc"
+                [[ -f "$rcfile" ]] ||
                 ;;
               *)
                 verbose "ERROR" "Pass a proper value for \$d."
@@ -161,13 +167,14 @@ check_dir() {
                 ;;
             esac
             ## $d does not get clobbered because the loop runs fully per arg
+            ## and case short-circuits at the first match
             mkdir -p "$d" 
           }
       }
     else
       broken "Unspecified directory." ||
-        verbose "WARNING" "No download directory specified.\n" \
-          # "\tUsing current directory instead..."
+        verbose "ERROR" "No download directory specified."
+      return 1
     fi
 done
 }
@@ -175,11 +182,18 @@ done
 check_sum() {
   local game="$1"
   local list="$2"
-  md5="$(md5sum "$game")"
+  md5="$("$md5prog" "$game")"
   md5="${md5%%$game}"
   while read -r sum; do
-    [[ ${md5^^} == "${sum^^}" ]] && break
+    ## capitalize all the characters and match them
+    ## can't guarantee mixed case will ever match
+    ## it appears some implementations of md5sum print all lower or all upper
+    [[ ${md5^^} == "${sum^^}" ]] && return
   done <$list
+  broken "No matching md5 checksum." ||
+    verbose "WARNING" "The md5 checksum for the game did not match " \
+      "any checksums in $list.\n" \
+      "\tVerify it manually or try updating it with -U."
 }
 
 generate_list() {
