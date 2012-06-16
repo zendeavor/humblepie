@@ -214,7 +214,16 @@ generate_list() {
 
   ## example format of md5sums
   ## md5sums = www.foo.com/downloads?key=${key}#734c973b6095c56c4866c0bf8bf8a410 
-  
+  links -html-numbered-links 1 \
+    -dump https://www.humblebundle.com/downloads\?key\="${key}"|grep '#'>sums.txt
+  sums="$(<sums.txt)"
+  while read -r sums; do
+    # sed -e -r 's/#\s*$//'
+    sums+=("${sums%%# }")
+  done
+  echo "${sums}"
+  echo "${sums[@]}"
+
 
   ## quick and dirty way to grab a complete list of files
   # [[ ! -r $file ]] && links -html-numbered-links 1 \
