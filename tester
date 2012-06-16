@@ -7,19 +7,25 @@ key="$1"
 hib_bundle=55
 file="${USER}-${hib_bundle}-md5.txt" 
 dump="list.txt"
-links -html-numbered-links 1 \
-  -dump https://www.humblebundle.com/downloads\?key\="${key}"|grep '#'>$dump
+# links -html-numbered-links 1 \
+#   -dump https://www.humblebundle.com/downloads\?key\="${key}"|grep '#'>$dump
 while read -r sums; do
-  [[ "${sums##*#}" && "${sums##*#}" != *:* ]] &&
+  [[ "${sums##*#}" ]] &&
     sumslist+=("${sums##*#}")
-    sleep 1
+    # sleep 1
 done <$dump
-# printf '%s\n' "${sumslist[@]}"
-rm -f $file
+sumslist="${sumslist[@]/stats/}"
+# sumslist="${sumslist[@]##:}"
+# echo "${sumslist[@]}" && false
 for ((i=1;i<="${#sumslist[@]}";i++)); do
-  # [[ "${sumslist[$i-1]}" =~ [[:alnum:]] ]] &&
-    printf '%s\n' "${sumslist[$i-1]}" >>$file
+  printf '%s\n' "${sumslist[$i-1]}"
 done
+# printf '%s\n' "${sumslist[@]}"
+# rm -f $file
+# for ((i=1;i<="${#sumslist[@]}";i++)); do
+#   # [[ "${sumslist[$i-1]}" =~ [[:alnum:]] ]] &&
+#     printf '%s\n' "${sumslist[$i-1]}" >>$file
+# done
 # while read -r line; do
 #   i=0
 #   # echo "${sums[$i]}" "$line"
