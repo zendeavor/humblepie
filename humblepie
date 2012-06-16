@@ -219,9 +219,9 @@ generate_list() {
       sumslist+=("${sums##*#}")
   done <$dump
   printf '%s\n' "${sumslist[@]}"
-  for ((i=1;i<="${#sumslist[@]}";i++)); do
+  for ((i=;i<="${#sumslist[@]}";i++)); do
     # [[ "${sumslist[$i-1]}" =~ [[:alnum:]] ]] &&
-      printf '%s\n' "${sumslist[$i-1]}" >>$file
+      printf '%s\n' "${sumslist[$i]}" >>$file
   done
 
   ## quick and dirty way to grab a complete list of files

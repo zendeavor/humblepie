@@ -3,6 +3,7 @@
 # set -x
 
 # . ./humblepie.rc
+key="$1"
 hib_bundle=55
 file="${USER}-${hib_bundle}-md5.txt" 
 dump="list.txt"
@@ -11,6 +12,7 @@ links -html-numbered-links 1 \
 while read -r sums; do
   [[ "${sums##*#}" && "${sums##*#}" != *:* ]] &&
     sumslist+=("${sums##*#}")
+    sleep 1
 done <$dump
 # printf '%s\n' "${sumslist[@]}"
 rm -f $file
