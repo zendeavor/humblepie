@@ -205,9 +205,9 @@ generate_list() {
   local link="$2"
   local file="${USER}-${hib_bundle}-${key}.txt"
   ## trying to save these files to avoid redownloading
-  ## this is a list of raw filenames and should be grabbed in 2 cases:
-  ## if this file does not already exist, grab it
-  ## if the updater is run, grab all the files again
+  ## these raw lists of filenames & md5s and should be grabbed in 2 cases:
+  ## if these files do not already exist, grab them
+  ## if the updater is run, grab the files again
   
   file="${USER}-${hib_bundle}-md5.txt" 
   dump="list.txt"
@@ -231,23 +231,22 @@ generate_list() {
   done <$dump
   ## clobber this file, the old version is always useless
   rm -f $file
-  ## set IFS to newline, then print each element of my array, 
-  IFS=$'\n'; printf '%s\n' "${sumslist[@]}" >>$file
+  ## set IFS to newline, then print each element of my array
+  IFS=$'\n'
+  for (( i=0; i<"${#sumslist[@]}"; i++ )); do
+    printf '%s\t%s\n' "${i+1}." "${sumslist[@]}" >>$file
+  done
   # set IFS back to a single space, the way it's meant to be
   IFS=" "
-  ## quick and dirty way to grab a complete list of files
-  # [[ ! -r $file ]] && links -html-numbered-links 1 \
-  #   -dump "$filelistlink" | grep files | grep -v webseed |
-  #   cut -d'/' -f4 | cut -d'?' -f1 > "$file"
-  ## this list is multipurpose
+
   declare -a list
   while read -r line; do
     list+=( "$line" )
   done <$file
   ## generate a numbered list
   ## ${#list[@]} is the number of elements in the array 'list'
-  for (( i=1; i<"${#list[@]}"; i++ )); do
+  for (( i=0; i<"${#list[@]}"; i++ )); do
     ## print the list, prefixed with numbers, starting from 1 instead of 0
-    printf "%s\t%s\n" "${i}." "${list[$i-1]}"
+    printf "%s\t%s\n" "${i+1}." "${list[$i]}"
   done
 }
