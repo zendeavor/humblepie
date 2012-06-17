@@ -2,75 +2,56 @@
 # vim: ft=sh
 set -x
 
-## send the value of the chosen $hibkey_*; the rest is automagic
-key="$1"
-hib_bundle=55
-prefix="${USER}-${hib_bundle}-${key}"
-dump="${prefix}-dump.txt"
+generate_list() {
+  ## send the value of the chosen $hibkey_*; the rest is automagic
+  local key="$1"
+  local prefix="${USER}-${hib_bundle}-${key}"
+  local dump="${prefix}-dump.txt"
 
-links -html-numbered-links 1 \
-  -dump https://www.humblebundle.com/downloads\?key\="${key}" >$dump
+  links -html-numbered-links 1 \
+    -dump https://www.humblebundle.com/downloads\?key\="${key}" >$dump
 
-declare -a list
-## generate the array as a list of game filenames
-while read -r line; do
-  list+=("$line")
-done <$dump
+  declare -a list
+  ## generate the array as a list of game filenames
+  while read -r line; do
+    list+=("$line")
+  done <$dump
 
-declare -A newlist
-for a in "${list[@]}"; do
-  ## i want every element that matches *files*/ ...
-  b="${a##*files*/}"
-  [[ $b == "$a" ]] || {
-    ## and then from those, strip ?key=* out of the end
-    c="${b%%?key*}"
-    ## and finally, everything from &t= onward is the md5sum, weird
-    d="${b##*t=}"
-    ## dump it into an associative array to get games by name
-    newlist+=(["$c"]="$d")
-  }
-done
-## now build another array to complete the reference loop
-## this array is designed to assign 1-N to game filenames
-## then present the user with the printf, and when they input 1...
-## ...i use ${userlist[1]} to get the game's filename
-num=1
-declare -Ag newlist
-declare -ag userlist
-for f in "${!newlist[@]}"; do
-  userlist[$num]="${newlist[$f]}"
-  printf '%s\t%s\t%s\t%s\n' "$num" "$f" "${newlist[$f]}" "${!newlist[$f]}"
-  ((num++))
-done
-# for ((i=1;i<="${#newlist[@]}";i++)); do
-#   printf '%s\t%s\t%s' "${i}." "${newlist[$i-1]}"
-# done
-# list="${list[@]%%files*/}"
-# list="${list[@]##?}"
-# for ((i=1;i<="${#list[@]}";i++)); do
-#   printf "%s\t%s\n" "${i}." "${list[$i-1]}" >$checklist
-# done
+  declare -Ag newlist
+  for a in "${list[@]}"; do
+    ## i want every element that matches *files*/ ...
+    b="${a##*files*/}"
+    [[ $b == "$a" ]] || {
+      ## and then from those, strip ?key=* out of the end
+      c="${b%%?key*}"
+      ## and finally, everything from &t= onward is the md5sum, weird
+      d="${b##*t=}"
+      ## dump it into an associative array to get games by name
+      newlist+=(["$c"]="$d")
+    }
+  done
+  ## now build another array to complete the reference loop
+  ## this array is designed to assign 1-N to game filenames
+  ## then present the user with the printf, and when they input 1...
+  ## ...i use ${userlist[1]} to get the game's filename
+  local num=1
+  declare -ag userlist
+  set -x
+  for f in "${!newlist[@]}"; do
+    userlist[$num]="$f" || exit 1
+    # printf '%s\t%s\t%s\n' "$num" "$f" "${newlist[$f]}"
+    printf '%s\t%s\t%s\n' "$num" "${userlist[$f]}" "${!userlist[$f]}"
+    ((num++))
+  done
+  exit
+}
 
-# declare -a sumslist
-# ## create a regex to match md5s
-# ## ^ anchors it to the start of the line, so matching occurs...
-# ## ... only from the very _first_ character. without this...
-# ## ... lots of fubar matches happened to me
-# ## [0-9a-fA-F] is a range match. md5s only consist of characters in hex range
-# ## {32} ensures that i only match length 32 strings
-# sumre="^[0-9a-fA-F]{32}"
-# ## read in my dumpfile, setting each line to the variable $sums in turn
-# while read -r sums; do
-#   ## strip $sums of everything up to and including an octothorpe then match
-#   [[ "${sums##*#}" =~ $sumre ]] && 
-#     ## if there was a match, it should be an md5sum. put it into ${sumslist[@]
-#     sumslist+=("${sums##*#}")
-# done <$dump
-# ## clobber this file, the old version is always useless
-# rm -f $checklist
-# ## set IFS to newline, then print each element of my array
-# IFS=$'\n'
-# for (( i=1; i<="${#sumslist[@]}"; i++ )); do
-#   printf '%s\t%s\t%s\n'  "${i}."  "${list[$i-1]}" "${sumslist[$i-1]}" >>$checklist
-# done
-# IFS=" "
+dl_game() {
+  set -x
+  printf '%s' "Choose game: "
+  while read -r game; do
+  curl -o "${hib_dir}/${userlist[$game]}" \
+    "https://files.humblebundle.com/${userlist[$game]}?key=${!hib_key}&t=${newlist[$game]}" || break
+  done
+}
+generate_list "$1"
