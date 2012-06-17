@@ -239,13 +239,12 @@ generate_list() {
   ## ...i use ${userlist[1]} to get the game's filename
   local num=1
   declare -ag userlist
+  set -x
   for f in "${!newlist[@]}"; do
-    userlist[$num]="$f"
-    printf '%s\t%s\t%s\t%s\n' "$num" "$f" "${newlist[$f]}" "${!newlist[$f]}"
+    userlist[$num]="$f" || exit 1
+    # printf '%s\t%s\t%s\n' "$num" "$f" "${newlist[$f]}"
+    printf '%s\t%s\t%s\n' "$num" "${userlist[$f]}" "${!userlist[$f]}"
     ((num++))
-  done
-  for f in "${userlist[@]}"; do
-    printf '%s\n' "$f"
   done
   exit
 }
@@ -255,7 +254,7 @@ dl_game() {
   printf '%s' "Choose game: "
   while read -r game; do
   curl -o "${hib_dir}/${userlist[$game]}" \
-    "https://files.humblebundle.com/${userlist[$game]}?key=${!hib_key}&t=${!newlist[$game]}" || break
+    "https://files.humblebundle.com/${userlist[$game]}?key=${!hib_key}&t=${newlist[$game]}" || break
   done
 }
 
