@@ -48,7 +48,11 @@ dl_game() {
   done
   printf '%s' "Choose game: "
   while read -r game; do
-  curl -o "${dir_hib}/${userlist[$game]}" \
-    "https://files.humblebundle.com/${userlist[$game]}?key=${!hib_key}&t=${!newlist[$game]}" || break
+    game="${userlist[$game]}"
+    fgame="${!userlist[$game]}"
+    curl -o "${dir_hib}/$game" \
+      "https://files.humblebundle.com/$game?key=${!hib_key}" || break
   done
 }
+generate_list "$1"
+
