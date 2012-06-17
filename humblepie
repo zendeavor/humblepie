@@ -171,7 +171,9 @@ check_dir() {
           esac
           ## $d does not get clobbered because the loop runs fully per arg
           ## and case short-circuits at the first match
-          mkdir -p "$d" 
+          for dir in "${!dir_@}"; do
+            [[ "${dir}" ]] || mkdir -p "$dir" 
+          done
           }
         }
       }
@@ -242,6 +244,10 @@ generate_list() {
     printf '%s\t%s\t%s\t%s\n' "$num" "$f" "${newlist[$f]}" "${!newlist[$f]}"
     ((num++))
   done
+  for f in "${userlist[@]}"; do
+    printf '%s\n' "$f"
+  done
+  exit
 }
 
 dl_game() {
