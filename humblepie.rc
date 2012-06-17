@@ -20,6 +20,8 @@ hibkey_introversion="foobar"
 hibkey_mojang="foobar"
 hibkey_voxatron="foobar"
 
+dir_hib="${HOME}/hib"
+dir_hib_torrent="${HOME}/hib/torrents"
 ## set these to 1 to enable
 ## allow running as root (for systemwide installations)
 asroot=0
@@ -28,7 +30,7 @@ asroot=0
 ## this also automatically enables verbosity no matter if set in this file
 automagic=0
 ## check md5sum of downloads
-check_md5=0
+check_md5=1
 ## test key for validity
 check_key=1
 ## spit out more detailed info, warnings, and errors

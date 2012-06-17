@@ -38,7 +38,7 @@ num=1
 declare -Ag newlist
 declare -ag userlist
 for f in "${!newlist[@]}"; do
-  userlist[$num]=("${newlist[$f]}")
+  userlist[$num]="${newlist[$f]}"
   printf '%s\t%s\t%s\t%s\n' "$num" "$f" "${newlist[$f]}" "${!newlist[$f]}"
   ((num++))
 done
