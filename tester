@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # vim: ft=sh
-set -x
+# set -x
 
 generate_list() {
   ## send the value of the chosen $hibkey_*; the rest is automagic
@@ -30,28 +30,25 @@ generate_list() {
       newlist+=(["$c"]="$d")
     }
   done
-  ## now build another array to complete the reference loop
-  ## this array is designed to assign 1-N to game filenames
-  ## then present the user with the printf, and when they input 1...
-  ## ...i use ${userlist[1]} to get the game's filename
-  local num=1
-  declare -ag userlist
-  set -x
-  for f in "${!newlist[@]}"; do
-    userlist[$num]="$f" || exit 1
-    # printf '%s\t%s\t%s\n' "$num" "$f" "${newlist[$f]}"
-    printf '%s\t%s\t%s\n' "$num" "${userlist[$f]}" "${!userlist[$f]}"
-    ((num++))
-  done
-  exit
 }
 
 dl_game() {
   set -x
+  ## now build another array to complete the reference loop
+  ## this array is designed to assign $num to game filenames
+  ## then present the user with the printf, and when they input 1...
+  ## ...i use ${userlist[$num]} to get the game's filename
+  local num=1
+  declare -ag userlist
+  for f in "${!newlist[@]}"; do
+    userlist[$num]="$f"
+    # printf '%s\t%s\t%s\n' "$num" "$f" "${newlist[$f]}"
+    printf '%s\t%s\t%s\n' "$num" "${userlist[$num]}" "${!userlist[$num]}"
+    ((num++))
+  done
   printf '%s' "Choose game: "
   while read -r game; do
-  curl -o "${hib_dir}/${userlist[$game]}" \
-    "https://files.humblebundle.com/${userlist[$game]}?key=${!hib_key}&t=${newlist[$game]}" || break
+  curl -o "${dir_hib}/${userlist[$game]}" \
+    "https://files.humblebundle.com/${userlist[$game]}?key=${!hib_key}&t=${!newlist[$game]}" || break
   done
 }
-generate_list "$1"
