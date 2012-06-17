@@ -42,8 +42,7 @@ else
   echo "No config file detected!"
 fi
 
-## brilliant idea, if gettext doesn't exist just echo the args
-## makepkg is some fantastic inspiration even if it's ugly
+## make gettext() a no-op if the binary is not executable
 [[ ! -x "$(type -p gettext)" ]] && gettext() { echo "$@"; }
 ## if automagic is enabled let's setup a passthrough function
 ## check for automagic, turn on verbosity by default
@@ -230,7 +229,7 @@ generate_list() {
       ## if there was a match, it should be an md5sum. put it into ${sumslist[@]
       sumslist+=("${sums##*#}")
   done <$dump
-  ## clobber these file, the old version is always useless
+  ## clobber this file, the old version is always useless
   rm -f $file
   ## set IFS to newline, then print each element of my array, 
   IFS=$'\n'; printf '%s\n' "${sumslist[@]}" >>$file
