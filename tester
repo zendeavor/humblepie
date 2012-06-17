@@ -7,18 +7,20 @@ key="$1"
 hib_bundle=55
 file="${USER}-${hib_bundle}-md5.txt" 
 dump="list.txt"
-# links -html-numbered-links 1 \
-#   -dump https://www.humblebundle.com/downloads\?key\="${key}"|grep '#'>$dump
+links -html-numbered-links 1 \
+  -dump https://www.humblebundle.com/downloads\?key\="${key}">$dump
 while read -r sums; do
-  [[ "${sums##*#}" ]] &&
-    sumslist+=("${sums##*#}")
+  if [[ "${sums##*#}" ]]; then
+    lensum="${sums##*#}"
+    [[ "${#lensum}" == 32 ]] && sumslist+=("${lensum}")
     # sleep 1
+  fi
 done <$dump
-sumslist="${sumslist[@]/stats/}"
-# sumslist="${sumslist[@]##:}"
+# sumslist="${sumslist[@]/stats/}"
+# sumslist="${sumslist[@]##stats}"
 # echo "${sumslist[@]}" && false
-for ((i=1;i<="${#sumslist[@]}";i++)); do
-  printf '%s\n' "${sumslist[$i-1]}"
+for ((i=0;i<="${#sumslist[@]}";i++)); do
+  printf '%s\n' "${sumslist[$i]}"
 done
 # printf '%s\n' "${sumslist[@]}"
 # rm -f $file
