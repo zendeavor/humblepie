@@ -145,7 +145,7 @@ check_dir() {
             ## $d will be one of these at a time
             ## case will find this setting and convert $d to the one i need
             ## when a match is found, the case ends for this iteration of loop
-            case "$d" in
+            case "$@" in
               hib_dir)
                 d="$PWD/humbleindiebundle/"
                 verbose "INFO" "Using $hib_dir instead..."
@@ -161,8 +161,8 @@ check_dir() {
                 rcdir="$d"
                 verbose "INFO" "Using $rcdir instead..."
                 rcfile="$rcdir/humblepie.rc"
-                [[ -f "$rcfile" ]] ||
-                ;;&
+                # [[ -f "$rcfile" ]] ||
+                ;;
               *)
                 verbose "ERROR" "Pass a proper value for \$d."
                 return 1
@@ -192,7 +192,7 @@ check_sum() {
     ## capitalize all the characters and match them
     ## can't guarantee mixed case will ever match
     ## it appears some implementations of md5sum print all lower or all upper
-    [[ ${md5^^} == "${sum^^}" ]] && return
+    [[ "${md5^^}" == "${sum^^}" ]] && return
   done <$list
   broken "No matching md5 checksum." ||
     verbose "WARNING" "The md5 checksum for the game did not match " \
@@ -209,21 +209,33 @@ generate_list() {
   ## this is a list of raw filenames and should be grabbed in 2 cases:
   ## if this file does not already exist, grab it
   ## if the updater is run, grab all the files again
-  ## clobber these file, the old version is always useless
   
+  file="${USER}-${hib_bundle}-md5.txt" 
   dump="list.txt"
   links -html-numbered-links 1 \
-    -dump https://www.humblebundle.com/downloads\?key\="${key}"|grep '#'>$dump
+    -dump https://www.humblebundle.com/downloads\?key\="${key}">$dump
+
+  declare -a sumslist
+  ## create a regex to match md5s
+  ## ^ anchors it to the start of the line, so matching occurs...
+  ## ... only from the very _first_ character. without this...
+  ## ... lots of fubar matches happened to me
+  ## [0-9a-fA-F] is a range match. md5s only consist of characters in hex range
+  ## {32} ensures that i only match length 32 strings
+  sumre="^[0-9a-fA-F]{32}"
+  ## read in my dumpfile, setting each line to the variable $sums in turn
   while read -r sums; do
-    [[ "${sums##*#}" && "${sums##*#}" != *:* ]] &&
+    ## strip $sums of everything up to and including an octothorpe then match
+    [[ "${sums##*#}" =~ $sumre ]] && 
+      ## if there was a match, it should be an md5sum. put it into ${sumslist[@]
       sumslist+=("${sums##*#}")
   done <$dump
-  printf '%s\n' "${sumslist[@]}"
-  for ((i=;i<="${#sumslist[@]}";i++)); do
-    # [[ "${sumslist[$i-1]}" =~ [[:alnum:]] ]] &&
-      printf '%s\n' "${sumslist[$i]}" >>$file
-  done
-
+  ## clobber these file, the old version is always useless
+  rm -f $file
+  ## set IFS to newline, then print each element of my array, 
+  IFS=$'\n'; printf '%s\n' "${sumslist[@]}" >>$file
+  # set IFS back to a single space, the way it's meant to be
+  IFS=" "
   ## quick and dirty way to grab a complete list of files
   # [[ ! -r $file ]] && links -html-numbered-links 1 \
   #   -dump "$filelistlink" | grep files | grep -v webseed |

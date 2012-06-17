@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # vim: ft=sh
-# set -x
+set -x
 
 # . ./humblepie.rc
 key="$1"
@@ -9,20 +9,22 @@ file="${USER}-${hib_bundle}-md5.txt"
 dump="list.txt"
 links -html-numbered-links 1 \
   -dump https://www.humblebundle.com/downloads\?key\="${key}">$dump
+sumre="^[0-9a-fA-F]{32}"
 while read -r sums; do
-  if [[ "${sums##*#}" ]]; then
-    lensum="${sums##*#}"
-    [[ "${#lensum}" == 32 && "$lensum" =~ '[0-9a-f]' ]] && 
-      sumslist+=("${lensum}")
-    # sleep 1
-  fi
+  [[ "${sums##*#}" =~ $sumre ]] && sumslist+=("${sums##*#}")
 done <$dump
+rm -f $file
+(IFS="
+"; printf '%s\n' "${sumslist[@]}" >>$file)
+# for "${sumslist[@]}"; do
+#   printf '%s\n' 
+
+# for ((i=0;i<="${#sumslist[@]}";i++)); do
+#   printf '%s\n' "${sumslist[$i]}" >>$file
+# done
 # sumslist="${sumslist[@]/stats/}"
 # sumslist="${sumslist[@]##stats}"
 # echo "${sumslist[@]}" && false
-for ((i=0;i<="${#sumslist[@]}";i++)); do
-  printf '%s\n' "${sumslist[$i]}"
-done
 # printf '%s\n' "${sumslist[@]}"
 # rm -f $file
 # for ((i=1;i<="${#sumslist[@]}";i++)); do
