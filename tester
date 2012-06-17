@@ -12,7 +12,8 @@ links -html-numbered-links 1 \
 while read -r sums; do
   if [[ "${sums##*#}" ]]; then
     lensum="${sums##*#}"
-    [[ "${#lensum}" == 32 ]] && sumslist+=("${lensum}")
+    [[ "${#lensum}" == 32 && "$lensum" =~ '[0-9a-f]' ]] && 
+      sumslist+=("${lensum}")
     # sleep 1
   fi
 done <$dump
