@@ -30,41 +30,6 @@ check_md5="${check_md5:=1}"
 md5prog="${md5prog:=md5sum}"
 verbose=${verbose:-1}
 
-check_dir
-rcfile="$dir_rc/humblepie.rc"
-if [[ -r "$rcfile" ]]; then
-  . "$rcfile"
-else
-  [[ -w "$dir_rc" ]] && cat >"$rcfile" <<'EOF' # hibkey_1="foobar"
-# hibkey_2="foobar"
-# hibkey_3="foobar"
-# hibkey_4="foobar"
-# hibkey_5="foobar"
-# hibkey_android1="foobar"
-# hibkey_android2="foobar"
-# hibkey_botanicula="foobar"
-# hibkey_frozenbyte="foobar"
-# hibkey_frozensynapse="foobar"
-# hibkey_introversion="foobar"
-# hibkey_mojang="foobar"
-# hibkey_voxatron="foobar"
-
-# dir_hib="${HOME}/humbleindiebundle"
-# dir_hib_torrent="${dir_hib}/torrents"
-## set these to 1 to enable
-## allow running as root (for systemwide installations)
-asroot=0
-## test key for validity
-check_key=1
-## check md5sum of downloads
-check_md5=1
-## spit out more detailed info, warnings, and errors
-verbose=0
-## turn on automatic checking/downloading updates
-# update=0
-EOF
-fi
-
 ## make gettext() a no-op if the binary is not executable
 [[ ! -x "$(type -p gettext)" ]] && gettext() { echo "$@"; }
 ## if verbose is on, define verbose(). if off, define broken()
@@ -102,35 +67,41 @@ else
   verbose() { false; } &>/dev/null
 fi
 
-check_key() {
-  ## grab the key
-  # local k="$1" ret=0
-  ## declare the array for keys
-  declare -A bundlekeys
-  ## expand all $hibkey_* variables from rcfile if they are set
-  ## the quotes and @ are important for proper expansion
-  for var in "${!hibkey_@}"; do
-    ## this is an indirect expansion to test if any $hibkey_* expanded
-    ## ${!var} will equal the value of each $hibkey_* in turn
-    ## if hibkey_foo="barbazquux" then $var expands to "barbazquux"
-    ## $var would be "hibkey_foo"
-    ## ["hibkey_foo"]="barbazquux"
-    # bundlekeys+=( ["${var##*_}"]="${var}" ) 
-    # if [[ ${!bundlekeys@} ]]; then
-    ## only populate array if there is a key defined
-    [[ "${!var}" == "${!hib_key}" ]] && {
-      ## if no key found, cry
-      # broken "No keys discovered."
-      # verbose "ERROR" "No keys configured.\n" \
-      #   "\tPlease specify a key with -k [key] or in your user's config file."
-      # return 1
-    ## i'm storing these in an array for possible re-use
-      k="${!var}"
-      h="${var##*_}"
-      bundlekeys+=(["$k"]="$h") 
-    }
-  done
-  verbose "INFO" "${#bundlekeys[@]} key found!"
+check_files () {
+  check_dir
+  rcfile="$dir_rc/humblepie.rc"
+  if [[ -r "$rcfile" ]]; then
+    . "$rcfile"
+  else
+    [[ -w "$dir_rc" ]] && cat >"$rcfile" <<'EOF' # hibkey_1="foobar"
+# hibkey_2="foobar"
+# hibkey_3="foobar"
+# hibkey_4="foobar"
+# hibkey_5="foobar"
+# hibkey_android1="foobar"
+# hibkey_android2="foobar"
+# hibkey_botanicula="foobar"
+# hibkey_frozenbyte="foobar"
+# hibkey_frozensynapse="foobar"
+# hibkey_introversion="foobar"
+# hibkey_mojang="foobar"
+# hibkey_voxatron="foobar"
+
+# dir_hib="${HOME}/humbleindiebundle"
+# dir_hib_torrent="${dir_hib}/torrents"
+## set these to 1 to enable
+## allow running as root (for systemwide installations)
+asroot=0
+## test key for validity
+check_key=1
+## check md5sum of downloads
+check_md5=1
+## spit out more detailed info, warnings, and errors
+verbose=0
+## turn on automatic checking/downloading updates
+# update=0
+EOF
+  fi
 }
 
 check_dir() {
@@ -163,6 +134,38 @@ check_dir() {
   for d in "${!dir_@}"; do
     [[ "${d}" ]] || mkdir -p "$d" 
   done
+}
+
+check_key() {
+  ## grab the key
+  # local k="$1" ret=0
+  ## declare the array for keys
+  declare -A bundlekeys
+  ## expand all $hibkey_* variables from rcfile if they are set
+  ## the quotes and @ are important for proper expansion
+  for var in "${!hibkey_@}"; do
+    ## this is an indirect expansion to test if any $hibkey_* expanded
+    ## ${!var} will equal the value of each $hibkey_* in turn
+    ## if hibkey_foo="barbazquux" then $var expands to "barbazquux"
+    ## $var would be "hibkey_foo"
+    ## ["hibkey_foo"]="barbazquux"
+    # bundlekeys+=( ["${var##*_}"]="${var}" ) 
+    # if [[ ${!bundlekeys@} ]]; then
+    ## only populate array if there is a key defined
+    [[ "${!var}" == "${!hib_key}" ]] && {
+      ## if no key found, cry
+      # broken "No keys discovered."
+      # verbose "ERROR" "No keys configured.\n" \
+      #   "\tPlease specify a key with -k [key] or in your user's config file."
+      # return 1
+    ## i'm storing these in an array for possible re-use
+      k="${!var}"
+      h="${var##*_}"
+      bundlekeys+=(["$k"]="$h") 
+    }
+  done
+  [[ "${bundlekeys}" ]] || return 1
+  verbose "INFO" "${#bundlekeys[@]} key found!"
 }
 
 generate_list() {
@@ -228,6 +231,7 @@ check_sum() {
 }
 
 hib_key="hibkey_$1"
+check_files
 check_key "$hib_key"
 hib_bundle="${hib_key}"
 cd "$dir_hib"
