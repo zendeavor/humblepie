@@ -176,9 +176,11 @@ generate_list() {
         game="${value#http://files.humblebundle.com/}"
         ## strip everything after '?key=' to get a filename
         game="${game%%\?*}"
-        links["$game"]="$value"
-        md5="${game##*#}"
-        sums["$game"]="$md5"
+        [[ "$game" ]] && {
+          links["$game"]="$value"
+          md5="${game##*#}"
+          sums["$game"]="$md5"
+        }
       }
     # else capture=1
     # fi
