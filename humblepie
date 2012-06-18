@@ -11,12 +11,13 @@
 
 ## comments starting with a single octothorpe are experimental code
 ## more than one octothorpe signifies detail or instructional comments
+
+set -x
 dir_rc="${XDG_CONFIG_HOME}/humblepie"
 
 (( ! EUID )) && {
   ## check if they used root on purpose
   if  (( ! asroot )); then
-    automagic=0
     ## if expected $rcfile doesn't exist, we're going to use /etc instead
     ## they're already root at this point, so further checking is moot
     [[ -f "${dir_rc}/humblepie.rc" ]] || dir_rc="/etc/humblepie"
@@ -24,7 +25,6 @@ dir_rc="${XDG_CONFIG_HOME}/humblepie"
 }
 
 asroot="${asroot:=0}"
-automagic="${automagic:+0}"
 check_key="${check_key:=1}"
 md5prog="${md5prog:=md5sum}"
 verbose=${verbose:-1}
@@ -44,10 +44,6 @@ fi
 
 ## make gettext() a no-op if the binary is not executable
 [[ ! -x "$(type -p gettext)" ]] && gettext() { echo "$@"; }
-## if automagic is enabled let's setup a passthrough function
-## check for automagic, turn on verbosity by default
-if (( automagic )); then verbose=1; automage() { :; } 
-else automagic() { false; } &>/dev/null; fi
 ## if verbose is on, define verbose(). if off, define broken()
 ## this way, testing for verbose is only done a single time
 ## probably a better way to do this, but we'll get around to it later
@@ -63,7 +59,7 @@ if (( verbose )); then
     ## sometimes it prints errors. return accordingly
     ## WARNING: return 2; ERROR: return 1; else return 0
     local info="$1"; shift
-    printf "%s\t%s\n" "==> $(gettext "$info":)" "$@"
+    printf "%s\t%s\n" "==> $(gettext "$info": "$@")"
   } >&2
   ## define this as false so i can do `broken && cmd` and cmd..
   ## .. only executes if verbose() { false; }; otherwise..
@@ -74,22 +70,14 @@ else
   broken() {
     ## broken() always returns 1 because we _probably_ want to exit 
     local mess="$1"; shift
-    printf "%s\n\t%s\n" "==> $(gettext Something is wrong...)" \
-      "Try again with -v\n" "PROBLEM: $mess" "$@"
+    printf "%s\n" "==> $(gettext "Something is wrong... \
+      \n\tTry again with -v\n PROBLEM:" "$mess" "$@")"
     return 1
   } >&2
   ## same applies here as did to broken() { false; }
   ## again, likely unnecessary
   verbose() { false; } &>/dev/null
 fi
-
-inarray() {
-  local n="$1" a="$2"; shift 2
-  for $a; do 
-    [[ "$n" == "$a" ]] && return
-  done
-  return 1
-}
 
 check_key() {
   ## grab the key
@@ -107,159 +95,106 @@ check_key() {
     # bundlekeys+=( ["${var##*_}"]="${var}" ) 
     # if [[ ${!bundlekeys@} ]]; then
     ## only populate array if there is a key defined
-    [[ "${!var}" == "${!hib_key}" ]] || {
+    [[ "${!var}" == "${!hib_key}" ]]
       ## if no key found, cry
-      broken "No keys discovered."
-      verbose "ERROR" "No keys configured.\n" \
-        "\tPlease specify a key with -k [key] or in your user's config file."
-      return 1
-    }
-    k="${var}"
+      # broken "No keys discovered."
+      # verbose "ERROR" "No keys configured.\n" \
+      #   "\tPlease specify a key with -k [key] or in your user's config file."
+      # return 1
+    ## i'm storing these in an array for possible re-use
+    k="${!var}"
     h="${var##*_}"
     bundlekeys+=(["$k"]="$h") 
-  # exit
   done
   verbose "INFO" "${#bundlekeys[@]} key found!"
 }
 
-## i think this can be rewritten with non-short-circuit ;;& case
 check_dir() {
-  local d
-  ## loop over args, we'll just call this 1 time per run
-  for d in "$@"; do
-  ## make sure it's a directory
-    if [[ -d "$d" ]]; then
-      ## make sure it is r/w, or cry about it
-      [[ -r "$d" && -w "$d" ]] || {
-        broken "Bad directory." ||
-          verbose "ERROR" "$d does not exist or you lack permissions!"
-        ## if automagic, and current dir is writable, use it
-         automagic && {
-         [[ -r "$PWD" && -w "$PWD" ]] || {
-          broken "$PWD is not r/w." || { 
-            verbose "ERROR" \
-              "$PWD must be r/w to enable automagic to continue.\n" \
-              "\tRun this script in a directory you have permissions in, " \
-              "or setup your config file appropriately."
-            return 1
-            }
-          ## $d will be one of these at a time
-          ## case will find this setting and convert $d to the one i need
-          ## when a match is found, the case ends for this iteration of loop
-          case "${!dir_@}" in
-            dir_hib)
-              d="$PWD/humbleindiebundle/"
-              verbose "INFO" "Using $dir_hib instead..."
-              dir_hib="$d"
-              ;;&
-            dir_hib_torrent)
-              d="$PWD/humbleindiebundle/torrents/"
-              dir_hib_torrent="$d"
-              verbose "INFO" "Using $dir_hib_torrent instead..."
-              ;;&
-            dir_rc)
-              d="$PWD/humblepie"
-              dir_rc="$d"
-              verbose "INFO" "Using $dir_rc instead..."
-              rcfile="$dir_rc/humblepie.rc"
-              # [[ -f "$rcfile" ]] ||
-              ;;
-            *)
-              verbose "ERROR" "Pass a proper value for \$d."
-              return 1
-              ;;
-          esac
-          ## $d does not get clobbered because the loop runs fully per arg
-          ## and case short-circuits at the first match
-          for dir in "${!dir_@}"; do
-            [[ "${dir}" ]] || mkdir -p "$dir" 
-          done
-          }
-        }
+  case "${!dir_@}" in
+    dir_hib)
+      [[ -d "$dir_hib" && -w "$dir_hib" ]] || {
+        d="$PWD/humbleindiebundle/"
+        verbose "INFO" "Using $dir_hib instead..."
+        dir_hib="$d"
+      } ;;&
+    dir_hib_torrent)
+      [[ -d "$dir_hib_torrent" && -w "$dir_hib_torrent" ]] || {
+        d="$PWD/humbleindiebundle/torrents/"
+        dir_hib_torrent="$d"
+        verbose "INFO" "Using $dir_hib_torrent instead..."
+      } ;;&
+    dir_rc)
+      [[ -d "$dir_rc" && -w "$dir_rc" ]] || {
+        d="$PWD/humblepie"
+        dir_rc="$d"
+        verbose "INFO" "Using $dir_rc instead..."
+        rcfile="$dir_rc/humblepie.rc"
+      } ;;
+  esac
+  for d in "${!dir_@}"; do
+    [[ "${d}" ]] || mkdir -p "$d" 
+  done
+}
+
+generate_list() {
+  ## unset for safety; declare an associative array
+  unset IFS links; declare -Ag links sums
+  capture=0
+  while read -r key value; do
+    # if ((capture == 1)); then
+      ## check the line, make sure it's a proper link
+      [[ "$value" = http://files.humblebundle.com/* ]] && {
+        game="${value#http://files.humblebundle.com/}"
+        ## strip everything after '?key=' to get a filename
+        game="${game%%\?*}"
+        links["$game"]="$value"
+        md5="${game##*#}"
+        sums["$game"]="$md5"
       }
-    else
-      broken "Unspecified directory." ||
-        verbose "ERROR" "No download directory specified."
-      return 1
-    fi
-done
+    # else capture=1
+    # fi
+    ## read in the links dump
+  done < \
+    <(links -html-numbered-links 1 \
+            -dump \
+            "https://www.humblebundle.com/downloads?key=$1")
+}
+
+dl_game () {
+  select choice in "${!links[@]}" quit; do
+    [[ "$choice" = quit ]] && return
+    curl -s -o "${dir_hib}/${choice}" "${links[$choice]}" 2>/dev/null
+    (( "$check_sum" )) && check_sum "$choice"
+  done
 }
 
 check_sum() {
   local game="$1"
-  local list="$2"
   md5="$("$md5prog" <"$game")"
   ## md5sum has a really irritating habit to print "cksum   filename"
   ## strip everything from first space to end of var
   md5="${md5%% *}"
-  while read -r sum; do
-    ## capitalize all the characters and match them
-    ## can't guarantee mixed case will ever match
-    ## capitalize everything, sums may be mixed case (i think)
-    ## potential to result in flawed success?
-    [[ "${md5^^}" == "${sum^^}" ]] && return
-  done <$list
-  broken "No matching md5 checksum." ||
+  ## capitalize all the characters and match them
+  ## can't guarantee mixed case will ever match
+  ## capitalize everything, sums may be mixed case (i think)
+  ## potential to result in flawed success?
+  ## without case modification, potential for false negatives?
+  sum="${sums["$game"]}"
+  sum="${sum^^}"
+  md5="${md5^^}"
+  (( sum = md5 )) || {
+  broken "No matching md5 checksum." || {
     verbose "WARNING" "The md5 checksum for the game did not match " \
       "any checksums in $list.\n" \
       "\tVerify it manually or try updating it with -U."
-}
-
-generate_list() {
-  ## send the value of the chosen $hibkey_*; the rest is automagic
-  local key="$1"
-  local prefix="${USER}-${hib_bundle}-${key}"
-  local dump="${prefix}-dump.txt"
-
-  links -html-numbered-links 1 \
-    -dump https://www.humblebundle.com/downloads\?key\="${key}" >$dump
-
-  declare -a list
-  ## generate the array as a list of game filenames
-  while read -r line; do
-    list+=("$line")
-  done <$dump
-
-  declare -Ag newlist
-  for a in "${list[@]}"; do
-    ## i want every element that matches *files*/ ...
-    b="${a##*files*/}"
-    [[ $b == "$a" ]] || {
-      ## and then from those, strip ?key=* out of the end
-      c="${b%%?key*}"
-      ## and finally, everything from &t= onward is the md5sum, weird
-      d="${b##*t=}"
-      ## dump it into an associative array to get games by name
-      newlist+=(["$c"]="$d")
     }
-  done
+  }
 }
 
-dl_game() {
-  set -x
-  ## now build another array to complete the reference loop
-  ## this array is designed to assign 1-N to game filenames
-  ## then present the user with the printf, and when they input 1...
-  ## ...i use ${userlist[1]} to get the game's filename
-  local num=1
-  declare -ag userlist
-  for f in "${!newlist[@]}"; do
-    userlist[$num]="$f" || exit 1
-    # printf '%s\t%s\t%s\n' "$num" "$f" "${newlist[$f]}"
-    printf '%s\t%s\t%s\n' "$num" "${userlist[$num]}" "${!userlist[$num]}"
-    ((num++))
-  done
-  printf '%s' "Choose game: "
-  while read -r game; do
-  curl -o "${dir_hib}/${userlist[$game]}" \
-    "https://files.humblebundle.com/${userlist[$game]}?key=${!hib_key}&t=${!newlist[$game]}" || break
-  done
-}
-
+check_dir
 hib_key="hibkey_$1"
 check_key "$hib_key"
 hib_bundle="${hib_key}"
-check_dir "$dir_hib" "$dir_hib_torrent" "$dir_rc"
 cd "$dir_hib"
 generate_list "${!hib_key}"
 dl_game
