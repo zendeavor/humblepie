@@ -12,12 +12,12 @@
 ## comments starting with a single octothorpe are experimental code
 ## more than one octothorpe signifies detail or instructional comments
 
-set -x
 dir_rc="${XDG_CONFIG_HOME}/humblepie"
 
 (( ! EUID )) && {
   ## check if they used root on purpose
   if  (( ! asroot )); then
+    verbose="1"
     ## if expected $rcfile doesn't exist, we're going to use /etc instead
     ## they're already root at this point, so further checking is moot
     [[ -f "${dir_rc}/humblepie.rc" ]] || dir_rc="/etc/humblepie"
@@ -26,6 +26,7 @@ dir_rc="${XDG_CONFIG_HOME}/humblepie"
 
 asroot="${asroot:=0}"
 check_key="${check_key:=1}"
+check_md5="${check_md5:=1}"
 md5prog="${md5prog:=md5sum}"
 verbose=${verbose:-1}
 
@@ -33,13 +34,43 @@ verbose=${verbose:-1}
 ## i have to set rcfile after verifying the directory is okay
 ## how about in the check_dir(), just set the bastard
 ## i intend to run check_dir() for _every_ invocation
+set -x
 rcfile="$dir_rc/humblepie.rc"
 if [[ -r "$rcfile" ]]; then
   . "$rcfile"
-elif [[ -f "$rcfile" ]]; then
-  echo "Bad permissions on $rcfile!"
 else
-  echo "No config file detected!"
+  [[ -w "$dir_rc" ]] && cat >"$rcfile" <<'EOF' # hibkey_1="foobar"
+# hibkey_2="foobar"
+# hibkey_3="foobar"
+# hibkey_4="foobar"
+# hibkey_5="foobar"
+# hibkey_android1="foobar"
+# hibkey_android2="foobar"
+# hibkey_botanicula="foobar"
+# hibkey_frozenbyte="foobar"
+# hibkey_frozensynapse="foobar"
+# hibkey_introversion="foobar"
+# hibkey_mojang="foobar"
+# hibkey_voxatron="foobar"
+
+# dir_hib="${HOME}/hib"
+# dir_hib_torrent="${HOME}/hib/torrents"
+## set these to 1 to enable
+## allow running as root (for systemwide installations)
+asroot=0
+## allow script to cheat a bit when values are unset or invalid
+## only enable this when you have unreasonable difficulty with the script
+## this also automatically enables verbosity no matter if set in this file
+automagic=0
+## test key for validity
+check_key=1
+## check md5sum of downloads
+check_md5=1
+## spit out more detailed info, warnings, and errors
+verbose=0
+## turn on automatic checking/downloading updates
+# update=0
+EOF
 fi
 
 ## make gettext() a no-op if the binary is not executable
@@ -164,7 +195,7 @@ dl_game () {
   select choice in "${!links[@]}" quit; do
     [[ "$choice" = quit ]] && return
     curl -s -o "${dir_hib}/${choice}" "${links[$choice]}" 2>/dev/null
-    (( "$check_sum" )) && check_sum "$choice"
+    (( "$check_md5" )) && check_sum "$choice"
   done
 }
 
