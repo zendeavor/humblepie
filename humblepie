@@ -49,23 +49,23 @@ else
   verbose() { false; } &>/dev/null
 fi
 
-check_root() {
-  (( EUID )) && {
-    ## check if they used root on purpose
-    if  (( ! asroot )); then
-      verbose="1"
-      ## if expected $rcfile doesn't exist, we're going to use /etc instead
-      ## they're already root at this point, so further checking is moot
-      [[ -f "${dir_rc}/humblepie.rc" ]] || dir_rc="/etc/humblepie"
-      rcfile="${dir_rc}/humblepie.rc"
-    fi
-  }
-}
+# check_root() {
+#   (( EUID )) && {
+#     ## check if they used root on purpose
+#     if  (( ! asroot )); then
+#       verbose="1"
+#       ## if expected $rcfile doesn't exist, we're going to use /etc instead
+#       ## they're already root at this point, so further checking is moot
+#       [[ -f "${dir_rc}/humblepie.rc" ]] || dir_rc="/etc/humblepie"
+#       rcfile="${dir_rc}/humblepie.rc"
+#     fi
+#   }
+# }
 
 check_files () {
   check_dir
   rcfile="${dir_rc}/humblepie.rc"
-  check_root
+  # check_root
   if [[ -r "$rcfile" ]]; then
     . "$rcfile"
   else
