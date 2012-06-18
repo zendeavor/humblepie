@@ -30,11 +30,7 @@ check_md5="${check_md5:=1}"
 md5prog="${md5prog:=md5sum}"
 verbose=${verbose:-1}
 
-## really need to figure this bitch out
-## i have to set rcfile after verifying the directory is okay
-## how about in the check_dir(), just set the bastard
-## i intend to run check_dir() for _every_ invocation
-set -x
+check_dir
 rcfile="$dir_rc/humblepie.rc"
 if [[ -r "$rcfile" ]]; then
   . "$rcfile"
@@ -53,15 +49,11 @@ else
 # hibkey_mojang="foobar"
 # hibkey_voxatron="foobar"
 
-# dir_hib="${HOME}/hib"
-# dir_hib_torrent="${HOME}/hib/torrents"
+# dir_hib="${HOME}/humbleindiebundle"
+# dir_hib_torrent="${dir_hib}/torrents"
 ## set these to 1 to enable
 ## allow running as root (for systemwide installations)
 asroot=0
-## allow script to cheat a bit when values are unset or invalid
-## only enable this when you have unreasonable difficulty with the script
-## this also automatically enables verbosity no matter if set in this file
-automagic=0
 ## test key for validity
 check_key=1
 ## check md5sum of downloads
@@ -126,37 +118,43 @@ check_key() {
     # bundlekeys+=( ["${var##*_}"]="${var}" ) 
     # if [[ ${!bundlekeys@} ]]; then
     ## only populate array if there is a key defined
-    [[ "${!var}" == "${!hib_key}" ]]
+    [[ "${!var}" == "${!hib_key}" ]] && {
       ## if no key found, cry
       # broken "No keys discovered."
       # verbose "ERROR" "No keys configured.\n" \
       #   "\tPlease specify a key with -k [key] or in your user's config file."
       # return 1
     ## i'm storing these in an array for possible re-use
-    k="${!var}"
-    h="${var##*_}"
-    bundlekeys+=(["$k"]="$h") 
+      k="${!var}"
+      h="${var##*_}"
+      bundlekeys+=(["$k"]="$h") 
+    }
   done
   verbose "INFO" "${#bundlekeys[@]} key found!"
 }
 
 check_dir() {
+  if [[ "$XDG_CONFIG_HOME" ]]; then
+    confdir="$XDG_CONFIG_HOME"
+  else
+    confdir="${HOME}/.config/humblepie"
+  fi
   case "${!dir_@}" in
     dir_hib)
       [[ -d "$dir_hib" && -w "$dir_hib" ]] || {
-        d="$PWD/humbleindiebundle/"
+        d="${PWD}/humbleindiebundle/"
         verbose "INFO" "Using $dir_hib instead..."
         dir_hib="$d"
       } ;;&
-    dir_hib_torrent)
-      [[ -d "$dir_hib_torrent" && -w "$dir_hib_torrent" ]] || {
-        d="$PWD/humbleindiebundle/torrents/"
-        dir_hib_torrent="$d"
-        verbose "INFO" "Using $dir_hib_torrent instead..."
-      } ;;&
+    # dir_hib_torrent)
+    #   [[ -d "$dir_hib_torrent" && -w "$dir_hib_torrent" ]] || {
+    #     d="${confdir}/humbleindiebundle/torrents/"
+    #     dir_hib_torrent="$d"
+    #     verbose "INFO" "Using $dir_hib_torrent instead..."
+    #   } ;;&
     dir_rc)
       [[ -d "$dir_rc" && -w "$dir_rc" ]] || {
-        d="$PWD/humblepie"
+        d="${confdir}/humblepie"
         dir_rc="$d"
         verbose "INFO" "Using $dir_rc instead..."
         rcfile="$dir_rc/humblepie.rc"
@@ -194,8 +192,13 @@ generate_list() {
 dl_game () {
   select choice in "${!links[@]}" quit; do
     [[ "$choice" = quit ]] && return
-    curl -s -o "${dir_hib}/${choice}" "${links[$choice]}" 2>/dev/null
-    (( "$check_md5" )) && check_sum "$choice"
+    dest="${dir_hib}/${choice}"
+    if [[ -f "$dest" ]]; then
+      echo "$choice already exists!"
+    else
+        curl -s -o "${dir_hib}/${choice}" "${links[$choice]}" 2>/dev/null
+      (( "$check_md5" )) && check_sum "$choice"
+    fi
   done
 }
 
@@ -222,7 +225,6 @@ check_sum() {
   }
 }
 
-check_dir
 hib_key="hibkey_$1"
 check_key "$hib_key"
 hib_bundle="${hib_key}"
