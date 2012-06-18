@@ -12,23 +12,6 @@
 ## comments starting with a single octothorpe are experimental code
 ## more than one octothorpe signifies detail or instructional comments
 
-dir_rc="${XDG_CONFIG_HOME}/humblepie"
-
-(( ! EUID )) && {
-  ## check if they used root on purpose
-  if  (( ! asroot )); then
-    verbose="1"
-    ## if expected $rcfile doesn't exist, we're going to use /etc instead
-    ## they're already root at this point, so further checking is moot
-    [[ -f "${dir_rc}/humblepie.rc" ]] || dir_rc="/etc/humblepie"
-  fi
-}
-
-asroot="${asroot:=0}"
-check_key="${check_key:=1}"
-check_md5="${check_md5:=1}"
-md5prog="${md5prog:=md5sum}"
-verbose=${verbose:-1}
 
 ## make gettext() a no-op if the binary is not executable
 [[ ! -x "$(type -p gettext)" ]] && gettext() { echo "$@"; }
@@ -46,8 +29,7 @@ if (( verbose )); then
     ## sometimes we call it to print extra info
     ## sometimes it prints errors. return accordingly
     ## WARNING: return 2; ERROR: return 1; else return 0
-    local info="$1"; shift
-    printf "%s\t%s\n" "==> $(gettext "$info": "$@")"
+    printf "%s\t%s\n" "==> $(gettext "$1": "$@:2")"
   } >&2
   ## define this as false so i can do `broken && cmd` and cmd..
   ## .. only executes if verbose() { false; }; otherwise..
@@ -59,7 +41,7 @@ else
     ## broken() always returns 1 because we _probably_ want to exit 
     local mess="$1"; shift
     printf "%s\n" "==> $(gettext "Something is wrong... \
-      \n\tTry again with -v\n PROBLEM:" "$mess" "$@")"
+      \n\tTry again with -v\n PROBLEM:" "$1" "$@:2")"
     return 1
   } >&2
   ## same applies here as did to broken() { false; }
@@ -67,9 +49,23 @@ else
   verbose() { false; } &>/dev/null
 fi
 
+check_root() {
+  (( EUID )) && {
+    ## check if they used root on purpose
+    if  (( ! asroot )); then
+      verbose="1"
+      ## if expected $rcfile doesn't exist, we're going to use /etc instead
+      ## they're already root at this point, so further checking is moot
+      [[ -f "${dir_rc}/humblepie.rc" ]] || dir_rc="/etc/humblepie"
+      rcfile="${dir_rc}/humblepie.rc"
+    fi
+  }
+}
+
 check_files () {
   check_dir
-  rcfile="$dir_rc/humblepie.rc"
+  rcfile="${dir_rc}/humblepie.rc"
+  check_root
   if [[ -r "$rcfile" ]]; then
     . "$rcfile"
   else
@@ -101,14 +97,28 @@ verbose=0
 ## turn on automatic checking/downloading updates
 # update=0
 EOF
+  echo "Created default config in $dir_rc" && exit 0
   fi
+
+asroot="${asroot:=0}"
+check_key="${check_key:=1}"
+check_md5="${check_md5:=1}"
+md5prog="${md5prog:=md5sum}"
+verbose=${verbose:-1}
+}
+
+in_array() {
+  local i
+  for i in "${@:2}"; do
+    [[ $1 = "$i" ]] && return
+  done
 }
 
 check_dir() {
   if [[ "$XDG_CONFIG_HOME" ]]; then
-    confdir="$XDG_CONFIG_HOME"
+    dir_rc="${XDG_CONFIG_HOME}/humblepie"
   else
-    confdir="${HOME}/.config/humblepie"
+    dir_rc="${HOME}/.config/humblepie"
   fi
   case "${!dir_@}" in
     dir_hib)
@@ -123,13 +133,13 @@ check_dir() {
     #     dir_hib_torrent="$d"
     #     verbose "INFO" "Using $dir_hib_torrent instead..."
     #   } ;;&
-    dir_rc)
-      [[ -d "$dir_rc" && -w "$dir_rc" ]] || {
-        d="${confdir}/humblepie"
-        dir_rc="$d"
-        verbose "INFO" "Using $dir_rc instead..."
-        rcfile="$dir_rc/humblepie.rc"
-      } ;;
+    # dir_rc)
+    #   [[ -d "$dir_rc" && -w "$dir_rc" ]] || {
+    #     d="${confdir}/humblepie"
+    #     dir_rc="$d"
+    #     verbose "INFO" "Using $dir_rc instead..."
+    #     rcfile="$dir_rc/humblepie.rc"
+    #   } ;;
   esac
   for d in "${!dir_@}"; do
     [[ "${d}" ]] || mkdir -p "$d" 
@@ -164,8 +174,7 @@ check_key() {
       bundlekeys+=(["$k"]="$h") 
     }
   done
-  [[ "${bundlekeys}" ]] || return 1
-  verbose "INFO" "${#bundlekeys[@]} key found!"
+  verbose "INFO" "${#bundlekeys[@]} keys found!"
 }
 
 generate_list() {
@@ -188,9 +197,7 @@ generate_list() {
     # else capture=1
     # fi
     ## read in the links dump
-  done < \
-    <(links -html-numbered-links 1 \
-            -dump \
+  done < <(links -html-numbered-links 1 -dump \
             "https://www.humblebundle.com/downloads?key=$1")
 }
 
