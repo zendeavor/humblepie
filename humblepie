@@ -197,13 +197,12 @@ generate_list() {
   done < <(links -html-numbered-links 1 -dump \
             "https://www.humblebundle.com/downloads?key=$1")
   for l in "${list[@]}"; do
-    [[ "$l" == *files* ]] && {
-      file="${l#*files*/}"
-      ## strip everything after '?key=' to get a filename
-      file="${file%%\?*}"
-      fnames+=("$file")
-      links["$file"]="$l"
-    }
+    [[ "$l" != *files* ]] || continue
+    file="${l#*files*/}"
+    ## strip everything after '?key=' to get a filename
+    file="${file%%\?*}"
+    fnames+=("$file")
+    links["$file"]="$l"
   done
 }
 
