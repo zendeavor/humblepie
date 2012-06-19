@@ -109,13 +109,6 @@ check_md5="${check_md5:=1}"
 verbose=${verbose:-1}
 }
 
-in_array() {
-  local i
-  for i in "${@:2}"; do
-    [[ $1 = "$i" ]] && return
-  done
-}
-
 check_dir() {
   if [[ "$XDG_CONFIG_HOME" ]]; then
     dir_rc="${XDG_CONFIG_HOME}/humblepie"
