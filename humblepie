@@ -13,6 +13,9 @@
 ## more than one octothorpe signifies detail or instructional comments
 
 
+## extglob is useful for matching with @()
+shopt -s extglob
+
 ## make gettext() a no-op if the binary is not executable
 [[ ! -x "$(type -p gettext)" ]] && gettext() { echo "$@"; }
 ## if verbose is on, define verbose(). if off, define broken()
@@ -179,63 +182,91 @@ check_key() {
 ## kudos to Riviera on #bash for help with this one o/
 generate_list() {
   ## unset for safety; declare an associative array
-  unset IFS links; declare -Ag links
-  local game
+  unset IFS links; declare -Ag links; declare -a list
+  local game pattern
+  pattern='http?(s)://!(support).humble*/?(downloads)*!(stats)'
   while read -r link; do
-    ## check the line, make sure it's a proper link
+    ## check the line, make sure it's a proper link, then add it to list
     link="${link#* }"
-    [[ "$link" == http://files.humblebundle.com/* ]] && {
-      game="${link#*files*/}"
-      ## strip everything after '?key=' to get a filename
-      game="${game%%\?*}"
-      links["$game"]="$link"
-    }
+    [[ "$link" == $pattern ]] && list+=("$link")
         ## read in the links dump
   done < <(links -html-numbered-links 1 -dump \
             "https://www.humblebundle.com/downloads?key=$1")
+  for f in "${list[@]}"; do
+    echo $f >>./foobar
+  done
+  exit
+    # [[ "$link" == http://files.humblebundle.com/* ]] && {
+    #   file="${link#*files*/}"
+    #   ## strip everything after '?key=' to get a filename
+    #   file="${file%%\?*}"
+    #   links["$file"]="$link"
+    # }
 }
 
 generate_md5() {
-  declare -a sums
-  while read -r cksum; do
-    cksum="${cksum##* }"
-    [[ "$cksum" = https://www.humblebundle.com/downloads?key=$1#* ]] && {
-      md5="${cksum##*#}"
-      [[ "$md5" ]] && sums+=("$md5")
+  local md5; declare -a sums; declare -ag files
+  while read -r list; do
+    ## the lines i want often start with numbers like `145. '
+    ## so strip out everything up to and including the first space
+    list="${list#* }"
+    ## then it needs to be a file link
+    [[ "$list" == http://files.humblebundle.com/* ]] && {
+      file="${list#*files*/}"
+      ## strip everything after '?key=' to get a filename
+      file="${file%%\?*}"
+      files+=("$file")
+    }
+    ## now make sure the line is a link that can contain an md5
+    [[ "$list" = https://www.humblebundle.com/downloads?key=$1#* ]] && {
+      ## strip everything before the md5sum out of it now
+      md5="${list##*#}"
+      ## sometimes the value is then an empty string, so ignore those
+      ## and then there is this one errant link pointing at stats
+      ## that's not an md5 (duh) so ignore it
+      ## then we populate the sums array
+      [[ "$md5" && "$md5" != "stats" ]] && sums+=("$md5")
+      ## checksums immediately follow their associated game
+      ## so far, this seems the simplest functional way to get things right
     }
   done < <(links -html-numbered-links 1 -dump \
             "https://www.humblebundle.com/downloads?key=$1")
   declare -Ag cksums
   local i=0
-  for game in "${!links[@]}"; do
-    cksums[$game]="${sums[$i]}"
+  ## now step through the array of filenames and assigning sums in order
+  for filename in "${files[@]}"; do
+    cksums[$filename]="${sums[$i]}"
     ((i++))
   done
 }
 
 dl_game () {
-  declare -ag game
+  declare -ag downloads
   declare -A dest
   select choice in "${!links[@]}" quit; do
     [[ "$choice" = quit ]] && break
     ## store each choice in an array
-    game+="$choice"
+    downloads+=("$choice")
     ## now populate this associative array by using the last index of ${game[@]}
     dest[$choice]="${dir_hib}/${game[@]:(-1)}"
   done
-  for t in "${game[@]}"; do
+  for t in "${downloads[@]}"; do
     if [[ -f "${dest[$t]}" ]]; then
-      echo "$choice already exists!"
+      echo "$t already exists!"
     else
-        curl -# -o "${dest[$t]}" "${links[$choice]}"
+      echo "Downloading $t..."
+      curl -# -o "${dest[$t]}" "${links[$t]}"
+      echo "Finished downloading ${t}!"
     fi
   done
 }
 
 check_sum() {
+  local md5
+  generate_md5 "${!hib_key}"
   for g in "${game[@]}"; do
     ## store the md5 hash
-    md5="$(md5sum <"$g")"
+    md5="$(md5sum <"${dir_hib}/$g")"
     ## md5sum has a really irritating habit to print "cksum   filename"
     ## strip everything from first space to end of var
     md5="${md5%% *}"
@@ -248,21 +279,18 @@ check_sum() {
     sum="${sum^^}"
     md5="${md5^^}"
     if [[ "$md5" == "${sum}" ]]; then
-      echo "The md5 for $g is okay!"
+      verbose "INFO" "The md5 for $g is okay!"
     else
-      echo "The md5 for $g ($md5) did not match $sum"
+      broken "Checksums did not match." ||
+       verbose "INFO" "The md5 for $g ($md5) did not match $sum"
     fi
   done
-    verbose "WARNING" "The md5 checksum for the game did not match\n \
-      \tVerify it manually or try updating it with -U."
 }
 
 hib_key="hibkey_$1"
 check_files
 check_key "$hib_key"
 hib_bundle="$hib_key"
-cd "$dir_hib"
 generate_list "${!hib_key}"
 dl_game
-generate_md5 "${!hib_key}"
 (( check_md5 )) && check_sum
