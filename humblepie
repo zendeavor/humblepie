@@ -32,13 +32,13 @@
 shopt -s extglob
 
 ## make gettext() a no-op if the binary is not executable
-[[ ! -x "$(type -p gettext)" ]] && gettext() { echo "$@"; }
+[[ ! -x "$(type -p gettext)" ]] && gettext() { echo -e "$@"; }
 ## if verbose is on, define verbose(). if off, define broken()
 ## this way, testing for verbose is only done a single time
 ## probably a better way to do this, but we'll get around to it later
 if (( verbose )); then
   ## i would like to incorporate some gettext action in here
-  printf "%s\n" "$(gettext "Verbose reporting is on!\n \
+  printf "$(gettext "Verbose reporting is on!\n \
     \tRun this program again with -x and -v to turn it off.\n \
     \tAlternatively, use $rcfile to pre-configure for $USER.")"
 
@@ -47,7 +47,7 @@ if (( verbose )); then
     ## sometimes we call it to print extra info
     ## sometimes it prints errors. return accordingly
     ## WARNING: return 2; ERROR: return 1; else return 0
-    printf "%s\n" "==> $(gettext $1: ${@:2})"
+    printf "==> $(gettext $1: ${@:2})\n"
   } >&2
   ## define this as false so i can do `broken && cmd` and cmd..
   ## .. only executes if verbose() { false; }; otherwise..
@@ -57,8 +57,8 @@ if (( verbose )); then
 else
   broken() {
     ## broken() always returns 1 because we _probably_ want to exit 
-    printf "%s\n" "==> Something is wrong...\n \
-      \tTry again with -v\n\tPROBLEM: $1 ${@:2}"
+    printf "%s\n" "==> $(gettext Something is wrong...\n \
+      \tTry again with -v\n\tPROBLEM: $1 ${@:2})"
     return 1
   } >&2
   ## same applies here as did to broken() { false; }
@@ -73,20 +73,19 @@ check_root() {
       verbose="1"
       ## if expected $rcfile doesn't exist, we're going to use /etc instead
       ## they're already root at this point, so further checking is moot
-      [[ -f "${dir_rc}/humblepie.rc" ]] || dir_rc="/etc/humblepie"
-      rcfile="${dir_rc}/humblepie.rc"
+      [[ -f "${dir_rc%/}/humblepie.rc" ]] || dir_rc="/etc/humblepie"
     fi
   }
 }
 
 check_files () {
-  check_dir
   check_root
-  rcfile="${dir_rc}/humblepie.rc"
+  check_dir
+  rcfile="${dir_rc%/}/humblepie.rc"
   if [[ -r "$rcfile" ]]; then
     . "$rcfile"
   else
-    [[ -w "$dir_rc" ]] && cat >&1 >"$rcfile" <<'EOF'
+    [[ -w "${dir_rc%/}" ]] && cat >&1 >"$rcfile" <<'EOF'
 # hibkey_1="foobar"
 # hibkey_2="foobar"
 # hibkey_3="foobar"
@@ -115,13 +114,8 @@ verbose=0
 ## turn on automatic checking/downloading updates
 # update=0
 EOF
-  echo "Created default config in $dir_rc" && exit 0
+  echo "Created default config in ${dir_rc%/}" && exit 0
   fi
-
-asroot="${asroot:=0}"
-check_key="${check_key:=1}"
-check_md5="${check_md5:=1}"
-verbose=${verbose:-1}
 }
 
 check_dir() {
@@ -132,14 +126,14 @@ check_dir() {
   fi
   case "${!dir_@}" in
     dir_hib)
-      [[ -d "$dir_hib" && -w "$dir_hib" ]] || {
-        d="${PWD}/humbleindiebundle/"
+      [[ -d "${dir_hib%/}" && -w "${dir_hib%/}" ]] || {
+        d="${HOME}/humbleindiebundle"
         verbose "INFO" "Using $d instead..."
         dir_hib="$d"
       } ;;&
     dir_hib_torrent)
-      [[ -d "$dir_hib_torrent" && -w "$dir_hib_torrent" ]] || {
-        d="${PWD}/humbleindiebundle/torrents/"
+      [[ -d "${dir_hib_torrent%/}" && -w "${dir_hib_torrent%/}" ]] || {
+        d="${HOME}/humbleindiebundle/torrents"
         verbose "INFO" "Using $d instead..."
         dir_hib_torrent="$d"
       } ;;&
@@ -152,39 +146,8 @@ check_dir() {
     #   } ;;
   esac
   for d in "${!dir_@}"; do
-    [[ "${d}" ]] || mkdir -p "$d" 
+    [[ -d "$d" ]] && mkdir -p "$d" 
   done
-}
-
-check_key() {
-  ## grab the key
-  # local k="$1" ret=0
-  ## declare the array for keys
-  declare -A bundlekeys
-  ## expand all $hibkey_* variables from rcfile if they are set
-  ## the quotes and @ are important for proper expansion
-  for var in "${!hibkey_@}"; do
-    ## this is an indirect expansion to test if any $hibkey_* expanded
-    ## ${!var} will equal the value of each $hibkey_* in turn
-    ## if hibkey_foo="barbazquux" then $var expands to "barbazquux"
-    ## $var would be "hibkey_foo"
-    ## ["hibkey_foo"]="barbazquux"
-    # bundlekeys+=( ["${var##*_}"]="${var}" ) 
-    # if [[ ${!bundlekeys@} ]]; then
-    ## only populate array if there is a key defined
-    [[ "${!var}" == "${!hib_key}" ]] && {
-      ## if no key found, cry
-      # broken "No keys discovered."
-      # verbose "ERROR" "No keys configured.\n" \
-      #   "\tPlease specify a key with -k [key] or in your user's config file."
-      # return 1
-    ## i'm storing these in an array for possible re-use
-      k="${!var}"
-      h="${var##*_}"
-      bundlekeys+=(["$k"]="$h") 
-    }
-  done
-  verbose "INFO" "${#bundlekeys[@]} keys found!"
 }
 
 ## kudos to Riviera on #bash for help with this one o/
@@ -194,21 +157,20 @@ generate_list() {
   ## needs to start with http obviously, then...
   ## ...strip out the ugly ubuntu link because lolcoupons...
   ## ...and only use links with key= in them
-  pattern+='http!(*ubuntu*)key=*'
+  # pattern+='http!(*ubuntu*)key=*'
   while read -r link; do
     ## check the line, make sure it's a proper link, then add it to list
     link="${link#* }"
-    [[ "$link" == $pattern ]] || echo $link 1>&2 2>./foobar
+    # [[ "$link" == $pattern ]] ## seems to strip important links =[
     list+=("$link")
         ## read in the links dump
   done < <(links -html-numbered-links 1 -dump \
-            "https://www.humblebundle.com/downloads?key=$1")
+            "https://www.humblebundle.com/downloads?key=${hib_key}")
   for l in "${list[@]}"; do
     [[ "$l" == *files* ]] && {
       file="${l##*files*/}"
       ## strip everything after '?key=' to get a filename
       file="${file%%\?*}"
-      fnames+=("$file")
       links["$file"]="$l"
     }
   done
@@ -232,6 +194,7 @@ dl_game () {
         echo "Finished downloading ${t}!"
     fi
   done
+  (( check_md5 )) && check_sum
 }
 
 check_sum() {
@@ -242,11 +205,9 @@ check_sum() {
       [[ "$cksum" ]] && sums+=("$cksum")
     }
   done
-  # echo "${#fnames[@]} ${#links[@]} ${#cksums[@]} ${#sums[@]}"
-  # exit
   for file in "${downloads[@]}"; do
     ## store the md5 hash
-    md5="$(md5sum <"${dir_hib}/$file")"
+    md5="$(md5sum <"${dir_hib%/}/$file")"
     ## md5sum has a really irritating habit to print "cksum   filename"
     ## strip everything from first space to end of var
     md5="${md5%% *}"
@@ -266,10 +227,55 @@ check_sum() {
   done
 }
 
-hib_key="hibkey_$1"
+run() {
+asroot="${asroot:=0}"
 check_files
-check_key "$hib_key"
-hib_bundle="$hib_key"
-generate_list "${!hib_key}"
+OPTIND=1
+while getopts "b:d:i:k:t:chrvV" opt; do
+  [[ "$opt" == '?' ]] && exit 1
+  case "$opt" in
+    b) ## just pick the bundle with the rcfile
+      hib_key="hibkey_${OPTARG}"
+      hib_key="${!hib_key}"
+      exit
+      ;;
+    c) ## check_game should verify md5
+      check_md5=1
+      ;;
+    d) ## set the download/game dir
+      dir_hib="${OPTARG%/}"
+      ;;
+    h\?) ## print usage
+      ;;
+    # i) ## not implemented
+    #   dir_install="${OPTARG}"
+    #   ;;
+    k) ## specify a key manually
+      hib_key="${OPTARG}"
+      ;;
+    # m) ## set download method; not implemented
+    #   case "${OPTARG}" in
+    #     t|torrent) dl_method="torrent"
+    #       ;;
+    #     h|http) dl_method="http"
+    #       ;;
+    #   esac
+    #   ;;
+    r) ## turn on root, for systemwide installs
+      asroot=1
+      ;;
+    # t) ## set the hib_torrent_dir; not implemented
+    #   hib_torrent_dir="${OPTARG}"
+    #   ;;
+    v) ## enable verbosity
+      verbose=1
+      ;;
+    V) : ## print version info
+      ;;
+  esac
+done
+generate_list
 dl_game
-(( check_md5 )) && check_sum
+}
+
+run "$@"
