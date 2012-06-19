@@ -20,16 +20,16 @@
 ## probably a better way to do this, but we'll get around to it later
 if (( verbose )); then
   ## i would like to incorporate some gettext action in here
-  printf "%s\n\t%s\n\t%s\n" "Verbose reporting is on!" \
-    "Run this program again with -x and -v to turn it off." \
-    "Alternatively, use $rcfile to pre-configure for $USER."
+  printf "%s\n" "$(gettext "Verbose reporting is on!\n \
+    \tRun this program again with -x and -v to turn it off.\n \
+    \tAlternatively, use $rcfile to pre-configure for $USER.")"
 
   verbose() {
     ## verbose has no special return value associated with it
     ## sometimes we call it to print extra info
     ## sometimes it prints errors. return accordingly
     ## WARNING: return 2; ERROR: return 1; else return 0
-    printf "%s\t%s\n" "==> $(gettext "$1": "$@:2")"
+    printf "%s\n" "==> $(gettext $1: $@:2)"
   } >&2
   ## define this as false so i can do `broken && cmd` and cmd..
   ## .. only executes if verbose() { false; }; otherwise..
@@ -39,9 +39,8 @@ if (( verbose )); then
 else
   broken() {
     ## broken() always returns 1 because we _probably_ want to exit 
-    local mess="$1"; shift
-    printf "%s\n" "==> $(gettext "Something is wrong... \
-      \n\tTry again with -v\n PROBLEM:" "$1" "$@:2")"
+    printf "%s\n" "==> $(gettext "Something is wrong...\n \
+      \tTry again with -v\n\tPROBLEM: $1 $@:2")"
     return 1
   } >&2
   ## same applies here as did to broken() { false; }
@@ -49,27 +48,28 @@ else
   verbose() { false; } &>/dev/null
 fi
 
-# check_root() {
-#   (( EUID )) && {
-#     ## check if they used root on purpose
-#     if  (( ! asroot )); then
-#       verbose="1"
-#       ## if expected $rcfile doesn't exist, we're going to use /etc instead
-#       ## they're already root at this point, so further checking is moot
-#       [[ -f "${dir_rc}/humblepie.rc" ]] || dir_rc="/etc/humblepie"
-#       rcfile="${dir_rc}/humblepie.rc"
-#     fi
-#   }
-# }
+check_root() {
+  (( EUID )) && {
+    ## check if they used root on purpose
+    if  (( ! asroot )); then
+      verbose="1"
+      ## if expected $rcfile doesn't exist, we're going to use /etc instead
+      ## they're already root at this point, so further checking is moot
+      [[ -f "${dir_rc}/humblepie.rc" ]] || dir_rc="/etc/humblepie"
+      rcfile="${dir_rc}/humblepie.rc"
+    fi
+  }
+}
 
 check_files () {
   check_dir
+  check_root
   rcfile="${dir_rc}/humblepie.rc"
-  # check_root
   if [[ -r "$rcfile" ]]; then
     . "$rcfile"
   else
-    [[ -w "$dir_rc" ]] && cat >"$rcfile" <<'EOF' # hibkey_1="foobar"
+    [[ -w "$dir_rc" ]] && cat >&1 >"$rcfile" <<'EOF'
+# hibkey_1="foobar"
 # hibkey_2="foobar"
 # hibkey_3="foobar"
 # hibkey_4="foobar"
@@ -103,7 +103,6 @@ EOF
 asroot="${asroot:=0}"
 check_key="${check_key:=1}"
 check_md5="${check_md5:=1}"
-md5prog="${md5prog:=md5sum}"
 verbose=${verbose:-1}
 }
 
@@ -124,20 +123,20 @@ check_dir() {
     dir_hib)
       [[ -d "$dir_hib" && -w "$dir_hib" ]] || {
         d="${PWD}/humbleindiebundle/"
-        verbose "INFO" "Using $dir_hib instead..."
+        verbose "INFO" "Using $d instead..."
         dir_hib="$d"
       } ;;&
-    # dir_hib_torrent)
-    #   [[ -d "$dir_hib_torrent" && -w "$dir_hib_torrent" ]] || {
-    #     d="${confdir}/humbleindiebundle/torrents/"
-    #     dir_hib_torrent="$d"
-    #     verbose "INFO" "Using $dir_hib_torrent instead..."
-    #   } ;;&
+    dir_hib_torrent)
+      [[ -d "$dir_hib_torrent" && -w "$dir_hib_torrent" ]] || {
+        d="${PWD}/humbleindiebundle/torrents/"
+        verbose "INFO" "Using $d instead..."
+        dir_hib_torrent="$d"
+      } ;;&
     # dir_rc)
     #   [[ -d "$dir_rc" && -w "$dir_rc" ]] || {
     #     d="${confdir}/humblepie"
+    #     verbose "INFO" "Using $d instead..."
     #     dir_rc="$d"
-    #     verbose "INFO" "Using $dir_rc instead..."
     #     rcfile="$dir_rc/humblepie.rc"
     #   } ;;
   esac
@@ -177,70 +176,93 @@ check_key() {
   verbose "INFO" "${#bundlekeys[@]} keys found!"
 }
 
+## kudos to Riviera on #bash for help with this one o/
 generate_list() {
   ## unset for safety; declare an associative array
-  unset IFS links; declare -Ag links sums
-  capture=0
-  while read -r key value; do
-    # if ((capture == 1)); then
-      ## check the line, make sure it's a proper link
-      [[ "$value" = http://files.humblebundle.com/* ]] && {
-        game="${value#http://files.humblebundle.com/}"
-        ## strip everything after '?key=' to get a filename
-        game="${game%%\?*}"
-        [[ "$game" ]] && {
-          links["$game"]="$value"
-          md5="${game##*#}"
-          sums["$game"]="$md5"
-        }
-      }
-    # else capture=1
-    # fi
-    ## read in the links dump
+  unset IFS links; declare -Ag links
+  local game
+  while read -r link; do
+    ## check the line, make sure it's a proper link
+    link="${link#* }"
+    [[ "$link" == http://files.humblebundle.com/* ]] && {
+      game="${link#*files*/}"
+      ## strip everything after '?key=' to get a filename
+      game="${game%%\?*}"
+      links["$game"]="$link"
+    }
+        ## read in the links dump
   done < <(links -html-numbered-links 1 -dump \
             "https://www.humblebundle.com/downloads?key=$1")
 }
 
+generate_md5() {
+  declare -a sums
+  while read -r cksum; do
+    cksum="${cksum##* }"
+    [[ "$cksum" = https://www.humblebundle.com/downloads?key=$1#* ]] && {
+      md5="${cksum##*#}"
+      [[ "$md5" ]] && sums+=("$md5")
+    }
+  done < <(links -html-numbered-links 1 -dump \
+            "https://www.humblebundle.com/downloads?key=$1")
+  declare -Ag cksums
+  local i=0
+  for game in "${!links[@]}"; do
+    cksums[$game]="${sums[$i]}"
+    ((i++))
+  done
+}
+
 dl_game () {
+  declare -ag game
+  declare -A dest
   select choice in "${!links[@]}" quit; do
-    [[ "$choice" = quit ]] && return
-    dest="${dir_hib}/${choice}"
-    if [[ -f "$dest" ]]; then
+    [[ "$choice" = quit ]] && break
+    ## store each choice in an array
+    game+="$choice"
+    ## now populate this associative array by using the last index of ${game[@]}
+    dest[$choice]="${dir_hib}/${game[@]:(-1)}"
+  done
+  for t in "${game[@]}"; do
+    if [[ -f "${dest[$t]}" ]]; then
       echo "$choice already exists!"
     else
-        curl -s -o "${dir_hib}/${choice}" "${links[$choice]}" 2>/dev/null
-      (( "$check_md5" )) && check_sum "$choice"
+        curl -# -o "${dest[$t]}" "${links[$choice]}"
     fi
   done
 }
 
 check_sum() {
-  local game="$1"
-  md5="$("$md5prog" <"$game")"
-  ## md5sum has a really irritating habit to print "cksum   filename"
-  ## strip everything from first space to end of var
-  md5="${md5%% *}"
-  ## capitalize all the characters and match them
-  ## can't guarantee mixed case will ever match
-  ## capitalize everything, sums may be mixed case (i think)
-  ## potential to result in flawed success?
-  ## without case modification, potential for false negatives?
-  sum="${sums["$game"]}"
-  sum="${sum^^}"
-  md5="${md5^^}"
-  (( sum = md5 )) || {
-  broken "No matching md5 checksum." || {
-    verbose "WARNING" "The md5 checksum for the game did not match " \
-      "any checksums in $list.\n" \
-      "\tVerify it manually or try updating it with -U."
-    }
-  }
+  for g in "${game[@]}"; do
+    ## store the md5 hash
+    md5="$(md5sum <"$g")"
+    ## md5sum has a really irritating habit to print "cksum   filename"
+    ## strip everything from first space to end of var
+    md5="${md5%% *}"
+    sum="${cksums[$g]}"
+    ## capitalize all the characters and match them
+    ## can't guarantee mixed case will ever match
+    ## capitalize everything, sums may be mixed case (i think)
+    ## potential to result in flawed success?
+    ## without case modification, potential for false negatives?
+    sum="${sum^^}"
+    md5="${md5^^}"
+    if [[ "$md5" == "${sum}" ]]; then
+      echo "The md5 for $g is okay!"
+    else
+      echo "The md5 for $g ($md5) did not match $sum"
+    fi
+  done
+    verbose "WARNING" "The md5 checksum for the game did not match\n \
+      \tVerify it manually or try updating it with -U."
 }
 
 hib_key="hibkey_$1"
 check_files
 check_key "$hib_key"
-hib_bundle="${hib_key}"
+hib_bundle="$hib_key"
 cd "$dir_hib"
 generate_list "${!hib_key}"
 dl_game
+generate_md5 "${!hib_key}"
+(( check_md5 )) && check_sum
