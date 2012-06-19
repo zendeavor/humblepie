@@ -184,17 +184,21 @@ generate_list() {
   ## unset for safety; declare an associative array
   unset IFS links; declare -Ag links; declare -a list
   local game pattern
-  pattern='http?(s)://!(support).humble*/?(downloads)*!(stats)'
+  pattern='http!(*ubuntu*)key=*'
+  ## optionally match an octothorpe and following, except 'stats'
+  # pattern+='?(#!(stats))'
+  # echo $pattern && exit
   while read -r link; do
     ## check the line, make sure it's a proper link, then add it to list
     link="${link#* }"
-    [[ "$link" == $pattern ]] && list+=("$link")
+    [[ "$link" == ${pattern} ]] && list+=("$link")
         ## read in the links dump
   done < <(links -html-numbered-links 1 -dump \
             "https://www.humblebundle.com/downloads?key=$1")
   for f in "${list[@]}"; do
-    echo $f >>./foobar
+    echo $f
   done
+  echo $pattern
   exit
     # [[ "$link" == http://files.humblebundle.com/* ]] && {
     #   file="${link#*files*/}"
