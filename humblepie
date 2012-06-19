@@ -32,7 +32,7 @@ if (( verbose )); then
     ## sometimes we call it to print extra info
     ## sometimes it prints errors. return accordingly
     ## WARNING: return 2; ERROR: return 1; else return 0
-    printf "%s\n" "==> $(gettext $1: $@:2)"
+    printf "%s\n" "==> $(gettext $1: ${@:2})"
   } >&2
   ## define this as false so i can do `broken && cmd` and cmd..
   ## .. only executes if verbose() { false; }; otherwise..
@@ -42,8 +42,8 @@ if (( verbose )); then
 else
   broken() {
     ## broken() always returns 1 because we _probably_ want to exit 
-    printf "%s\n" "==> $(gettext "Something is wrong...\n \
-      \tTry again with -v\n\tPROBLEM: $1 $@:2")"
+    printf "%s\n" "==> Something is wrong...\n \
+      \tTry again with -v\n\tPROBLEM: $1 ${@:2}"
     return 1
   } >&2
   ## same applies here as did to broken() { false; }
@@ -174,10 +174,8 @@ check_key() {
 
 ## kudos to Riviera on #bash for help with this one o/
 generate_list() {
-  ## unset for safety; declare some arrays
   unset IFS links sums fnames cksums
-  local game pattern
-  declare -Ag links; declare -ag list
+  local game pattern; declare -Ag links; declare -ag list
   ## needs to start with http obviously, then...
   ## ...strip out the ugly ubuntu link because lolcoupons...
   ## ...and only use links with key= in them
@@ -185,23 +183,24 @@ generate_list() {
   while read -r link; do
     ## check the line, make sure it's a proper link, then add it to list
     link="${link#* }"
-    [[ "$link" == $pattern ]] && list+=("$link")
+    [[ "$link" == $pattern ]] || echo $link 1>&2 2>./foobar
+    list+=("$link")
         ## read in the links dump
   done < <(links -html-numbered-links 1 -dump \
             "https://www.humblebundle.com/downloads?key=$1")
   for l in "${list[@]}"; do
-    [[ "$l" != *files* ]] || continue
-    file="${l#*files*/}"
-    ## strip everything after '?key=' to get a filename
-    file="${file%%\?*}"
-    fnames+=("$file")
-    links["$file"]="$l"
+    [[ "$l" == *files* ]] && {
+      file="${l##*files*/}"
+      ## strip everything after '?key=' to get a filename
+      file="${file%%\?*}"
+      fnames+=("$file")
+      links["$file"]="$l"
+    }
   done
 }
 
 dl_game () {
-  declare -ag downloads
-  declare -A dest
+  declare -ag downloads; declare -A dest
   select choice in "${!links[@]}" quit; do
     [[ "$choice" = quit ]] && break
     ## store each choice in an array
@@ -221,41 +220,34 @@ dl_game () {
 }
 
 check_sum() {
-  local md5
-  declare -a sums
+  local md5; declare -a sums
   for l in "${list[@]}"; do
-    [[ "$l" == *#* ]] && {
+    [[ "$l" == *downloads*#* ]] && {
       cksum="${l#*#}"
       [[ "$cksum" ]] && sums+=("$cksum")
     }
   done
-  declare -A cksums; local i=0
-  for filename in "${fnames[@]}"; do
-    cksums[$filename]="${sums[$i]}"
-    ((i++))
-  done
-  echo "${#fnames[@]} ${#links[@]}"
-  exit
+  # echo "${#fnames[@]} ${#links[@]} ${#cksums[@]} ${#sums[@]}"
+  # exit
   for file in "${downloads[@]}"; do
     ## store the md5 hash
     md5="$(md5sum <"${dir_hib}/$file")"
     ## md5sum has a really irritating habit to print "cksum   filename"
     ## strip everything from first space to end of var
     md5="${md5%% *}"
-    sum="${cksums[$file]}"
     ## capitalize all the characters and match them
     ## can't guarantee mixed case will ever match
     ## capitalize everything, sums may be mixed case (i think)
     ## potential to result in flawed success?
     ## without case modification, potential for false negatives?
-    sum="${sum^^}"
-    md5="${md5^^}"
-    if [[ "$md5" == "${sum}" ]]; then
-      verbose "INFO" "The md5 for $g is okay!"
-    else
-      broken "Checksums did not match." ||
-       verbose "INFO" "The md5 for $g ($md5) did not match $sum"
-    fi
+    for sum in "${sums[@]}"; do
+      [[ "${md5^^}" == "${sum^^}" ]] && {
+        verbose "INFO" "The md5 for $g is okay!"
+        break
+      }
+    done
+      # broken "Checksums did not match." ||
+      #  verbose "INFO" "The md5 for $g ($md5) did not match $sum"
   done
 }
 
