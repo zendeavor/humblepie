@@ -280,6 +280,7 @@ while getopts "b:d:g:i:k:t:chrvV" opt; do
       ;;
   esac
 done
+messaging
 generate_list
 auto_dl_game
 }
