@@ -66,15 +66,8 @@ check_root() {
   }
 }
 
-check_files () {
-  check_root
-  check_dir
-
-  if [[ -r "$rcfile" ]]; then
-    . "$rcfile"
-  else
-    [[ -w "${dir_rc%/}" ]] && {
-    cat >&1 >"$rcfile" <<"EOF"
+write_default_rc () {
+  cat >&1 >"$rcfile" <<"EOF"
 # hibkey_1="foobar"
 # hibkey_2="foobar"
 # hibkey_3="foobar"
@@ -103,9 +96,7 @@ verbose=0
 ## turn on automatic checking/downloading updates
 # update=0
 EOF
-  }
   echo "Created default config in ${dir_rc%/}" && exit
-  fi
 }
 
 check_dir() {
@@ -116,6 +107,7 @@ check_dir() {
     dir_rc="${HOME}/.config/humblepie"
   fi
   rcfile="${dir_rc%/}/humblepie.rc"
+  [[ ! -f "$rcfile" && -w "${dir_rc%/}" ]] && write_default_rc
   . "$rcfile"
 
   for dir in "${!dir_@}"; do
@@ -138,7 +130,7 @@ check_dir() {
 
 ## kudos to Riviera on #bash for help with this one o/
 generate_list() {
-  unset IFS links list
+  unset IFS links list link dl
   local game pattern; declare -Ag links; declare -ag list
 
   ## needs to start with http obviously, then...
@@ -154,18 +146,18 @@ generate_list() {
   done < <(links -html-numbered-links 1 -dump \
             "https://www.humblebundle.com/downloads?key=${hib_key}")
 
-  for l in "${list[@]}"; do
-    [[ "$l" == *files* ]] && {
-      file="${l#*files*/}"
+  for dl in "${list[@]}"; do
+    [[ "$dl" == *files* ]] && {
+      file="${dl#*files*/}"
       ## strip everything after '?key=' to get a filename
       file="${file%%\?*}"
-      links["$file"]="$l"
+      links["$file"]="$dl"
     }
   done
 }
 
 search_list() {
-  unset slist; declare -ag slist; declare -Ag slinks
+  unset dl slist; declare -ag slist; declare -Ag slinks
 
   for s in "${!links[@]}"; do
     [[ "${s,,}" == +(*${search,,}*) ]] && slist+=("$s")
@@ -180,8 +172,8 @@ search_list() {
     }
   }
 
-  for f in "${slist[@]}"; do
-    slinks["$f"]="${links[$f]}"
+  for dl in "${slist[@]}"; do
+    slinks["$dl"]="${links[$dl]}"
   done
 }
 
@@ -202,15 +194,15 @@ auto_dl_game () {
   esac
 
   ## loop through the choices
-  for f in "${downloads[@]}"; do
+  for fn in "${downloads[@]}"; do
     ## make sure the game doesn't already exist
-    if [[ -f "${dest[$f]}" ]]; then
-      verbose "WARNING" "$f already exists! Skipping..."
+    if [[ -f "${dest[$fn]}" ]]; then
+      verbose "WARNING" "$fn already exists! Skipping..."
     else
       ## then download it!
-      verbose "INFO" "Downloading $f..."
-      curl -# -o "${dest[$f]}" "${links[$f]}" &&
-        verbose "INFO" "Finished downloading ${f}!"
+      verbose "INFO" "Downloading $fn..."
+      curl -# -o "${dest[$fn]}" "${links[$fn]}" &&
+        verbose "INFO" "Finished downloading ${fn}!"
     fi
   done
 
@@ -236,11 +228,11 @@ user_list() {
 }
 
 check_sum() {
-  unset md5 sums; local md5; declare -a sums
+  unset md5 sums dl; local md5; declare -a sums
 
-  for l in "${list[@]}"; do
-    [[ "$l" == *downloads*#* ]] && {
-      cksum="${l#*#}"
+  for dl in "${list[@]}"; do
+    [[ "$dl" == *downloads*#* ]] && {
+      cksum="${dl#*#}"
       [[ "$cksum" ]] && sums+=("$cksum")
     }
   done
@@ -323,6 +315,8 @@ while getopts ":b:d:g:i:k:s:t:chrvV" opt; do
       ;;
   esac
 done
+check_root
+check_dir
 messaging
 generate_list
 [[ "$search" ]] && search_list
