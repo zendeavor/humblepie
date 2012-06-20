@@ -36,36 +36,30 @@ shopt -s extglob
 ## if verbose is on, define verbose(). if off, define broken()
 ## this way, testing for verbose is only done a single time
 ## probably a better way to do this, but we'll get around to it later
-if (( verbose )); then
-  ## i would like to incorporate some gettext action in here
-  printf "$(gettext "Verbose reporting is on!\n \
-    \tRun this program again with -x and -v to turn it off.\n \
-    \tAlternatively, use $rcfile to pre-configure for $USER.")"
+messaging() {
+  if (( verbose > 0 )); then
+    ## i would like to incorporate some gettext action in here
+    printf "$(gettext "Verbose reporting is on!\n \
+      \tRun this program again with -x and -v to turn it off.\n \
+      \tAlternatively, use $rcfile to pre-configure for $USER.")"
 
-  verbose() {
-    ## verbose has no special return value associated with it
-    ## sometimes we call it to print extra info
-    ## sometimes it prints errors. return accordingly
-    ## WARNING: return 2; ERROR: return 1; else return 0
-    printf "==> $(gettext "$1": "${@:2}")\n"
-  } >&2
-  ## define this as false so i can do `broken && cmd` and cmd..
-  ## .. only executes if verbose() { false; }; otherwise..
-  ## .. i can do `broken || cmd` if necessary
-  ## probably unnecessary to do
-  broken() { false; } &>/dev/null
-else
-  broken() {
-    ## broken() always returns 1 because we _probably_ want to exit 
-    printf "==> $(gettext Something is wrong...\n \
-      \tTry again with -v\n \
-      \tPROBLEM: "$1" "${@:2}")\n"
-    return 1
-  } >&2
-  ## same applies here as did to broken() { false; }
-  ## again, likely unnecessary
-  verbose() { false; } &>/dev/null
-fi
+    verbose() {
+      ## verbose has no special return value associated with it
+      ## WARNING: return 2; ERROR: return 1; else return 0
+      printf "==> $(gettext "$1": "${@:2}")\n"
+    } >&2
+    broken() { false; } &>/dev/null
+  else
+    broken() {
+      ## broken() always returns 1 because we _probably_ want to exit 
+      printf "==> $(gettext Something is wrong...\n \
+        \tTry again with -v\n \
+        \tPROBLEM: "$1" "${@:2}")\n"
+      return 1
+    } >&2
+    verbose() { false; } &>/dev/null
+  fi
+}
 
 check_root() {
   (( EUID == 0 )) && {
@@ -168,7 +162,7 @@ generate_list() {
             "https://www.humblebundle.com/downloads?key=${hib_key}")
   for l in "${list[@]}"; do
     [[ "$l" == *files* ]] && {
-      file="${l##*files*/}"
+      file="${l#*files*/}"
       ## strip everything after '?key=' to get a filename
       file="${file%%\?*}"
       links["$file"]="$l"
@@ -182,9 +176,9 @@ auto_dl_game () {
     downloads[0]="$hib_game"
     dest["$hib_game"]="${dir_hib}/$hib_game"
   else
-    PS3="Select a file by number, $(( ${#links[@]} +1 )) to continue: "
-    select choice in "${!links[@]}" quit; do
-      [[ "$choice" = quit ]] && break
+    PS3="Select a file by number, 0 to continue: "
+    select choice in "${!links[@]}"; do
+      [[ "$choice" ]] || break
       ## store each choice in an array
       downloads+=("$choice")
       ## now populate this associative array last using index of ${downloads[@]}
@@ -195,12 +189,12 @@ auto_dl_game () {
   for f in "${downloads[@]}"; do
     ## make sure the game doesn't already exist
     if [[ -f "${dest[$f]}" ]]; then
-      echo "$f already exists! Skipping..."
+      verbose "WARNING" "$f already exists! Skipping..."
     else
       ## then download it!
-      verbose "Downloading $f..."
+      verbose "INFO" "Downloading $f..."
       curl -# -o "${dest[$f]}" "${links[$f]}" &&
-        verbose "Finished downloading ${f}!"
+        verbose "INFO" "Finished downloading ${f}!"
     fi
   done
   (( check_md5 )) && check_sum
@@ -220,7 +214,6 @@ check_sum() {
     ## md5sum has a really irritating habit to print "cksum   filename"
     ## strip everything from first space to end of var
     md5="${md5%% *}"
-    ## capitalize all the characters and match them
     ## can't guarantee mixed case will ever match
     ## capitalize everything, sums may be mixed case (i think)
     ## potential to result in flawed success?
@@ -241,7 +234,7 @@ asroot="${asroot:=0}"
 check_files
 OPTIND=1
 while getopts "b:d:g:i:k:t:chrvV" opt; do
-  [[ "$opt" == '?' ]] && exit 1
+  [[ "$opt" == '?' ]] && echo "Missing arguments." && exit 1
   case "$opt" in
     b) ## just pick the bundle with the rcfile
       hib_key="hibkey_$OPTARG"
@@ -283,7 +276,7 @@ while getopts "b:d:g:i:k:t:chrvV" opt; do
     v) ## enable verbosity
       verbose=1
       ;;
-    V) : ## print version info
+    V) ## print version info
       ;;
   esac
 done
