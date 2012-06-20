@@ -79,7 +79,8 @@ check_files () {
   if [[ -r "$rcfile" ]]; then
     . "$rcfile"
   else
-    [[ -w "${dir_rc%/}" ]] && cat >&1 >"$rcfile" <<'EOF'
+    [[ -w "${dir_rc%/}" ]] && {
+    cat >&1 >"$rcfile" <<'EOF'
 # hibkey_1="foobar"
 # hibkey_2="foobar"
 # hibkey_3="foobar"
@@ -108,6 +109,7 @@ verbose=0
 ## turn on automatic checking/downloading updates
 # update=0
 EOF
+  }
   echo "Created default config in ${dir_rc%/}" && exit 0
   fi
 }
@@ -140,7 +142,7 @@ check_dir() {
       } ;;
   esac
   for d in "${!dir_@}"; do
-    [[ -d "$d" ]] && mkdir -p "$d" 
+    [[ ! -d "$d" ]] && mkdir -p "$d" 
   done
 }
 
@@ -165,6 +167,7 @@ generate_list() {
       file="${l#*files*/}"
       ## strip everything after '?key=' to get a filename
       file="${file%%\?*}"
+      printf '%s\n' "$file" >>fnames
       links["$file"]="$l"
     }
   done
