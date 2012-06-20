@@ -69,13 +69,12 @@ check_root() {
 check_files () {
   check_root
   check_dir
-  rcfile="${dir_rc%/}/humblepie.rc"
 
   if [[ -r "$rcfile" ]]; then
     . "$rcfile"
   else
     [[ -w "${dir_rc%/}" ]] && {
-    cat >&1 >"$rcfile" <<'EOF'
+    cat >&1 >"$rcfile" <<"EOF"
 # hibkey_1="foobar"
 # hibkey_2="foobar"
 # hibkey_3="foobar"
@@ -105,7 +104,7 @@ verbose=0
 # update=0
 EOF
   }
-  echo "Created default config in ${dir_rc%/}" && exit 0
+  echo "Created default config in ${dir_rc%/}" && exit
   fi
 }
 
@@ -116,31 +115,24 @@ check_dir() {
   else
     dir_rc="${HOME}/.config/humblepie"
   fi
+  rcfile="${dir_rc%/}/humblepie.rc"
+  . "$rcfile"
 
-  case "${!dir_@}" in
-    dir_hib)
-      [[ -d "${dir_hib%/}" && -w "${dir_hib%/}" ]] || {
-        d="${HOME}/humbleindiebundle"
-        verbose "INFO" "Using $d instead..."
-        dir_hib="$d"
-      } ;;&
-    dir_hib_torrent)
-      [[ -d "${dir_hib_torrent%/}" && -w "${dir_hib_torrent%/}" ]] || {
-        d="${HOME}/humbleindiebundle/torrents"
-        verbose "INFO" "Using $d instead..."
-        dir_hib_torrent="$d"
-      } ;;&
-    dir_rc)
-      [[ -d "$dir_rc" && -w "$dir_rc" ]] || {
-        d="${HOME}/.config/humblepie"
-        verbose "INFO" "Using $d instead..."
-        dir_rc="$d"
-        rcfile="$dir_rc/humblepie.rc"
-      } ;;
-  esac
-
-  for d in "${!dir_@}"; do
-    [[ ! -d "$d" ]] && mkdir -p "$d" 
+  for dir in "${!dir_@}"; do
+    case "$dir" in
+      dir_hib)
+        [[ -d "${dir_hib%/}" && -w "${dir_hib%/}" ]] || {
+          dir_hib="${HOME}/humbleindiebundle"
+          verbose "INFO" "Using $dir_hib instead..."
+          mkdir -p $dir_hib
+        } ;;
+      dir_hib_torrent)
+        [[ -d "${dir_hib_torrent%/}" && -w "${dir_hib_torrent%/}" ]] || {
+          dir_hib_torrent="${HOME}/humbleindiebundle/torrents"
+          verbose "INFO" "Using $dir_hib_torrent instead..."
+          mkdir -p $dir_hib_torrent
+        } ;;
+    esac
   done
 }
 
