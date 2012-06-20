@@ -31,30 +31,24 @@
 ## extglob is useful for matching with @()
 shopt -s extglob
 
-## make gettext() a no-op if the binary is not executable
-[[ ! -x "$(type -p gettext)" ]] && gettext() { echo -e "$@"; }
 ## if verbose is on, define verbose(). if off, define broken()
 ## this way, testing for verbose is only done a single time
 ## probably a better way to do this, but we'll get around to it later
 messaging() {
   if (( verbose > 0 )); then
     ## i would like to incorporate some gettext action in here
-    printf "$(gettext "Verbose reporting is on!\n \
-      \tRun this program again with -x and -v to turn it off.\n \
-      \tAlternatively, use $rcfile to pre-configure for $USER.")"
-
+    printf "%s\n" "Verbose reporting is on!"
     verbose() {
       ## verbose has no special return value associated with it
       ## WARNING: return 2; ERROR: return 1; else return 0
-      printf "==> $(gettext "$1": "${@:2}")\n"
+      printf "==> %s:\t%s\n" "$1" "${@:2}"
     } >&2
     broken() { false; } &>/dev/null
   else
     broken() {
       ## broken() always returns 1 because we _probably_ want to exit 
-      printf "==> $(gettext Something is wrong...\n \
-        \tTry again with -v\n \
-        \tPROBLEM: "$1" "${@:2}")\n"
+      printf "==> %s\n\t%s\t%s %s\n" "Something is wrong..." \
+        " Try again with -v." "PROBLEM:" "$1" "${@:2}"
       return 1
     } >&2
     verbose() { false; } &>/dev/null
@@ -173,24 +167,23 @@ generate_list() {
       file="${l#*files*/}"
       ## strip everything after '?key=' to get a filename
       file="${file%%\?*}"
-      printf '%s\n' "$file"
       links["$file"]="$l"
     }
   done
 }
 
 search_list() {
-  unset slist; declare -ag slist
+  unset slist; declare -ag slist; declare -Ag slinks
 
   for s in "${!links[@]}"; do
-    [[ "${s,,}" == +(${search,,}) ]] && slist+=("$s")
+    [[ "${s,,}" == +(*${search,,}*) ]] && slist+=("$s")
   done
 
   [[ "${slist[@]}" ]] || {
     broken "No files matched the search." || {
-      verbose "ERROR" "The search was unsuccessful.\n \
-        Please verify you specified a key or bundle and\n \
-        spelled the search term correctly.\n"
+      verbose "ERROR" "The search was unsuccessful. \
+        Please verify you specified a key or bundle and \
+        spelled the search term correctly."
       return 1
     }
   }
@@ -203,15 +196,15 @@ search_list() {
 auto_dl_game () {
   unset downloads; declare -ag downloads
 
-  case "$@" in
+  case "$1" in
     single)
       downloads[0]="$hib_game"
       dest["$hib_game"]="${dir_hib}/$hib_game"
       ;;
     search)
-      user_list "${!slist[@]}"
+      user_list "${slist[@]}"
       ;;
-    full)
+    *)
       user_list "${!links[@]}"
       ;;
   esac
@@ -233,10 +226,15 @@ auto_dl_game () {
 }
 
 user_list() {            
-  unset dest; local list="$1"; declare -Ag dest
+  unset dest; declare -Ag dest
+
+  # for word in "$@"; do
+  #   list+=("$word")
+  # done
+
   PS3="Select a file by number, 0 to continue: "
 
-  select choice in "$list"; do
+  select choice in "$@"; do
     [[ "$choice" ]] || break
     ## store each choice in an array
     downloads+=("$choice")
