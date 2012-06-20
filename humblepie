@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # vim: ft=sh sw=2 sts=2 et
 ###############################################################################
-### v0.2
+### v0.3
 ### Copyright (c) 2012 Josh McGee
 ### 
 ### Permission is hereby granted, free of charge, to any person obtaining a 
@@ -75,7 +75,7 @@ check_files () {
     . "$rcfile"
   else
     [[ -w "${dir_rc%/}" ]] && {
-    cat >&1 >"$rcfile" <<'EOF'
+    cat >&1 >"$rcfile" <<"EOF"
 # hibkey_1="foobar"
 # hibkey_2="foobar"
 # hibkey_3="foobar"
@@ -123,19 +123,18 @@ check_dir() {
         d="${HOME}/humbleindiebundle"
         verbose "INFO" "Using $d instead..."
         dir_hib="$d"
-      } ;;&
+      } ;;
     dir_hib_torrent)
       [[ -d "${dir_hib_torrent%/}" && -w "${dir_hib_torrent%/}" ]] || {
         d="${HOME}/humbleindiebundle/torrents"
         verbose "INFO" "Using $d instead..."
         dir_hib_torrent="$d"
-      } ;;&
+      } ;;
     dir_rc)
       [[ -d "$dir_rc" && -w "$dir_rc" ]] || {
         d="${HOME}/.config/humblepie"
         verbose "INFO" "Using $d instead..."
         dir_rc="$d"
-        rcfile="$dir_rc/humblepie.rc"
       } ;;
   esac
 
