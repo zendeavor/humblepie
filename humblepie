@@ -47,7 +47,7 @@ if (( verbose )); then
     ## sometimes we call it to print extra info
     ## sometimes it prints errors. return accordingly
     ## WARNING: return 2; ERROR: return 1; else return 0
-    printf "==> $(gettext $1: ${@:2})\n"
+    printf "==> $(gettext "$1": "${@:2}")\n"
   } >&2
   ## define this as false so i can do `broken && cmd` and cmd..
   ## .. only executes if verbose() { false; }; otherwise..
@@ -57,8 +57,9 @@ if (( verbose )); then
 else
   broken() {
     ## broken() always returns 1 because we _probably_ want to exit 
-    printf "%s\n" "==> $(gettext Something is wrong...\n \
-      \tTry again with -v\n\tPROBLEM: $1 ${@:2})"
+    printf "==> $(gettext Something is wrong...\n \
+      \tTry again with -v\n \
+      \tPROBLEM: "$1" "${@:2}")\n"
     return 1
   } >&2
   ## same applies here as did to broken() { false; }
@@ -67,13 +68,12 @@ else
 fi
 
 check_root() {
-  (( EUID )) && {
+  (( EUID == 0 )) && {
     ## check if they used root on purpose
-    if  (( ! asroot )); then
-      verbose="1"
-      ## if expected $rcfile doesn't exist, we're going to use /etc instead
+    if  (( asroot > 0 )); then
+      verbose="1"; exit
       ## they're already root at this point, so further checking is moot
-      [[ -f "${dir_rc%/}/humblepie.rc" ]] || dir_rc="/etc/humblepie"
+      dir_rc="/etc/humblepie"
     fi
   }
 }
@@ -137,13 +137,13 @@ check_dir() {
         verbose "INFO" "Using $d instead..."
         dir_hib_torrent="$d"
       } ;;&
-    # dir_rc)
-    #   [[ -d "$dir_rc" && -w "$dir_rc" ]] || {
-    #     d="${confdir}/humblepie"
-    #     verbose "INFO" "Using $d instead..."
-    #     dir_rc="$d"
-    #     rcfile="$dir_rc/humblepie.rc"
-    #   } ;;
+    dir_rc)
+      [[ -d "$dir_rc" && -w "$dir_rc" ]] || {
+        d="${HOME}/.config/humblepie"
+        verbose "INFO" "Using $d instead..."
+        dir_rc="$d"
+        rcfile="$dir_rc/humblepie.rc"
+      } ;;
   esac
   for d in "${!dir_@}"; do
     [[ -d "$d" ]] && mkdir -p "$d" 
@@ -176,22 +176,31 @@ generate_list() {
   done
 }
 
-dl_game () {
+auto_dl_game () {
   declare -ag downloads; declare -A dest
-  select choice in "${!links[@]}" quit; do
-    [[ "$choice" = quit ]] && break
-    ## store each choice in an array
-    downloads+=("$choice")
-    ## now populate this associative array by using the last index of ${game[@]}
-    dest[$choice]="${dir_hib}/${downloads[@]:(-1)}"
-  done
-  for t in "${downloads[@]}"; do
-    if [[ -f "${dest[$t]}" ]]; then
-      echo "$t already exists! Skipping..."
+  if [[ "$hib_game" ]]; then 
+    downloads[0]="$hib_game"
+    dest["$hib_game"]="${dir_hib}/$hib_game"
+  else
+    PS3="Select a file by number, $(( ${#links[@]} +1 )) to continue: "
+    select choice in "${!links[@]}" quit; do
+      [[ "$choice" = quit ]] && break
+      ## store each choice in an array
+      downloads+=("$choice")
+      ## now populate this associative array last using index of ${downloads[@]}
+      dest[$choice]="${dir_hib}/${downloads[@]:(-1)}"
+    done
+  fi
+  ## loop through the choices
+  for f in "${downloads[@]}"; do
+    ## make sure the game doesn't already exist
+    if [[ -f "${dest[$f]}" ]]; then
+      echo "$f already exists! Skipping..."
     else
-      echo "Downloading $t..."
-      curl -# -o "${dest[$t]}" "${links[$t]}" &&
-        echo "Finished downloading ${t}!"
+      ## then download it!
+      verbose "Downloading $f..."
+      curl -# -o "${dest[$f]}" "${links[$f]}" &&
+        verbose "Finished downloading ${f}!"
     fi
   done
   (( check_md5 )) && check_sum
@@ -231,19 +240,22 @@ run() {
 asroot="${asroot:=0}"
 check_files
 OPTIND=1
-while getopts "b:d:i:k:t:chrvV" opt; do
+while getopts "b:d:g:i:k:t:chrvV" opt; do
   [[ "$opt" == '?' ]] && exit 1
   case "$opt" in
     b) ## just pick the bundle with the rcfile
-      hib_key="hibkey_${OPTARG}"
+      hib_key="hibkey_$OPTARG"
       hib_key="${!hib_key}"
-      exit
       ;;
     c) ## check_game should verify md5
       check_md5=1
       ;;
     d) ## set the download/game dir
+      unset dir_hib
       dir_hib="${OPTARG%/}"
+      ;;
+    g) ## pick a game to download
+      hib_game="$OPTARG"
       ;;
     h\?) ## print usage
       ;;
@@ -251,7 +263,8 @@ while getopts "b:d:i:k:t:chrvV" opt; do
     #   dir_install="${OPTARG}"
     #   ;;
     k) ## specify a key manually
-      hib_key="${OPTARG}"
+      unset hib_key
+      hib_key="$OPTARG"
       ;;
     # m) ## set download method; not implemented
     #   case "${OPTARG}" in
@@ -275,7 +288,7 @@ while getopts "b:d:i:k:t:chrvV" opt; do
   esac
 done
 generate_list
-dl_game
+auto_dl_game
 }
 
 run "$@"
