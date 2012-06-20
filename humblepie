@@ -76,6 +76,7 @@ check_files () {
   check_root
   check_dir
   rcfile="${dir_rc%/}/humblepie.rc"
+
   if [[ -r "$rcfile" ]]; then
     . "$rcfile"
   else
@@ -115,11 +116,13 @@ EOF
 }
 
 check_dir() {
+  ## pick a directory for config to live in
   if [[ "$XDG_CONFIG_HOME" ]]; then
     dir_rc="${XDG_CONFIG_HOME}/humblepie"
   else
     dir_rc="${HOME}/.config/humblepie"
   fi
+
   case "${!dir_@}" in
     dir_hib)
       [[ -d "${dir_hib%/}" && -w "${dir_hib%/}" ]] || {
@@ -141,6 +144,7 @@ check_dir() {
         rcfile="$dir_rc/humblepie.rc"
       } ;;
   esac
+
   for d in "${!dir_@}"; do
     [[ ! -d "$d" ]] && mkdir -p "$d" 
   done
@@ -148,8 +152,9 @@ check_dir() {
 
 ## kudos to Riviera on #bash for help with this one o/
 generate_list() {
-  unset IFS links sums fnames cksums
+  unset IFS links list
   local game pattern; declare -Ag links; declare -ag list
+
   ## needs to start with http obviously, then...
   ## ...strip out the ugly ubuntu link because lolcoupons...
   ## ...and only use links with key= in them
@@ -162,32 +167,55 @@ generate_list() {
         ## read in the links dump
   done < <(links -html-numbered-links 1 -dump \
             "https://www.humblebundle.com/downloads?key=${hib_key}")
+
   for l in "${list[@]}"; do
     [[ "$l" == *files* ]] && {
       file="${l#*files*/}"
       ## strip everything after '?key=' to get a filename
       file="${file%%\?*}"
-      printf '%s\n' "$file" >>fnames
+      printf '%s\n' "$file"
       links["$file"]="$l"
     }
   done
 }
 
+search_list() {
+  unset slist; declare -ag slist
+
+  for s in "${!links[@]}"; do
+    [[ "${s,,}" == +(${search,,}) ]] && slist+=("$s")
+  done
+
+  [[ "${slist[@]}" ]] || {
+    broken "No files matched the search." || {
+      verbose "ERROR" "The search was unsuccessful.\n \
+        Please verify you specified a key or bundle and\n \
+        spelled the search term correctly.\n"
+      return 1
+    }
+  }
+
+  for f in "${slist[@]}"; do
+    slinks["$f"]="${links[$f]}"
+  done
+}
+
 auto_dl_game () {
-  declare -ag downloads; declare -A dest
-  if [[ "$hib_game" ]]; then 
-    downloads[0]="$hib_game"
-    dest["$hib_game"]="${dir_hib}/$hib_game"
-  else
-    PS3="Select a file by number, 0 to continue: "
-    select choice in "${!links[@]}"; do
-      [[ "$choice" ]] || break
-      ## store each choice in an array
-      downloads+=("$choice")
-      ## now populate this associative array last using index of ${downloads[@]}
-      dest[$choice]="${dir_hib}/${downloads[@]:(-1)}"
-    done
-  fi
+  unset downloads; declare -ag downloads
+
+  case "$@" in
+    single)
+      downloads[0]="$hib_game"
+      dest["$hib_game"]="${dir_hib}/$hib_game"
+      ;;
+    search)
+      user_list "${!slist[@]}"
+      ;;
+    full)
+      user_list "${!links[@]}"
+      ;;
+  esac
+
   ## loop through the choices
   for f in "${downloads[@]}"; do
     ## make sure the game doesn't already exist
@@ -200,17 +228,33 @@ auto_dl_game () {
         verbose "INFO" "Finished downloading ${f}!"
     fi
   done
-  (( check_md5 )) && check_sum
+
+  (( check_md5 > 0 )) && check_sum
+}
+
+user_list() {            
+  unset dest; local list="$1"; declare -Ag dest
+  PS3="Select a file by number, 0 to continue: "
+
+  select choice in "$list"; do
+    [[ "$choice" ]] || break
+    ## store each choice in an array
+    downloads+=("$choice")
+    ## now populate this associative array last using index of ${downloads[@]}
+    dest[$choice]="${dir_hib%/}/${downloads[@]:(-1)}"
+  done
 }
 
 check_sum() {
-  local md5; declare -a sums
+  unset md5 sums; local md5; declare -a sums
+
   for l in "${list[@]}"; do
     [[ "$l" == *downloads*#* ]] && {
       cksum="${l#*#}"
       [[ "$cksum" ]] && sums+=("$cksum")
     }
   done
+
   for file in "${downloads[@]}"; do
     ## store the md5 hash
     md5="$(md5sum <"${dir_hib%/}/$file")"
@@ -223,12 +267,13 @@ check_sum() {
     ## without case modification, potential for false negatives?
     for sum in "${sums[@]}"; do
       [[ "${md5^^}" == "${sum^^}" ]] && {
+        success="1"
         verbose "INFO" "The md5 for $g is okay!"
         break
       }
     done
-      # broken "Checksums did not match." ||
-      #  verbose "INFO" "The md5 for $g ($md5) did not match $sum"
+    (( success < 1 )) && broken "Checksums did not match." ||
+       verbose "INFO" "The md5 for $g ($md5) did not match $sum"
   done
 }
 
@@ -236,7 +281,7 @@ run() {
 asroot="${asroot:=0}"
 check_files
 OPTIND=1
-while getopts "b:d:g:i:k:t:chrvV" opt; do
+while getopts ":b:d:g:i:k:s:t:chrvV" opt; do
   [[ "$opt" == '?' ]] && echo "Missing arguments." && exit 1
   case "$opt" in
     b) ## just pick the bundle with the rcfile
@@ -251,6 +296,7 @@ while getopts "b:d:g:i:k:t:chrvV" opt; do
       dir_hib="${OPTARG%/}"
       ;;
     g) ## pick a game to download
+      dl_arg="single"
       hib_game="$OPTARG"
       ;;
     h\?) ## print usage
@@ -273,6 +319,10 @@ while getopts "b:d:g:i:k:t:chrvV" opt; do
     r) ## turn on root, for systemwide installs
       asroot=1
       ;;
+    s) ## case insensitive searching
+      dl_arg="search"
+      search="$OPTARG"
+      ;;
     # t) ## set the hib_torrent_dir; not implemented
     #   hib_torrent_dir="${OPTARG}"
     #   ;;
@@ -285,7 +335,8 @@ while getopts "b:d:g:i:k:t:chrvV" opt; do
 done
 messaging
 generate_list
-auto_dl_game
+[[ "$search" ]] && search_list
+auto_dl_game "$dl_arg"
 }
 
 run "$@"
