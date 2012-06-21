@@ -58,6 +58,12 @@ On first run, humblepie creates a configuration file in ~/.config/humblepie. It 
 Email:  j.s.mcgee115@gmail.com
 IRC:    irc.freenode.net/zendeavor
 
+##Thanks
+
+Credit to [meskarune](admin@doloresportalatin.info) for writing this initial README. No one does it like her.
+
+Appreciation for Earnestly and gtmanfred for breaking this script often.
+
 ##Copyright
 
 Copyright (c) 2012 Josh McGee
@@ -79,9 +85,3 @@ Copyright (c) 2012 Josh McGee
     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
     DEALINGS IN THE SOFTWARE.
-
-##Thanks
-
-Credit to [meskarune](admin@doloresportalatin.info) for writing this initial README. No one does it like her.
-
-Appreciation for Earnestly and gtmanfred for breaking this script often.
