@@ -295,7 +295,6 @@ check_root
 check_dir
 OPTIND=1
 while getopts ":b:d:g:k:s:chrv" opt; do
-  [[ "$opt" == '?' ]] && usage && exit 1
   case "$opt" in
     b) ## just pick the bundle with the rcfile
       unset hib_key
@@ -321,6 +320,11 @@ while getopts ":b:d:g:k:s:chrv" opt; do
     h) ## print usage
       usage
       exit
+      ;;
+    \?) ## usage, exit with error
+      echo "Invalid option specified."
+      usage
+      exit 1
       ;;
     # i) ## not implemented
     #   dir_install="${OPTARG}"
