@@ -1,10 +1,10 @@
 #README
 
-Humblepie downloads game install files from the Humble Indie Bundle Releases
+humblepie downloads files from the Humble Indie Bundle Releases
 
 ##Overview 
 
-Humblepie is a bash script that will download [Humble Indie Bundle](https://www.humblebundle.com/) files and check the md5 sums. It will work with any Indie Humble Bundle.
+Humblepie is a bash script that will download [Humble Indie Bundle](https://www.humblebundle.com/) files and check the md5 sums. It will work with any Humble Bundle.
 
 ##Usage
 
