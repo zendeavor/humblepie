@@ -101,13 +101,7 @@ EOF
 
 check_dir() {
   ## pick a directory for config to live in
-  [[ "$dir_rc" ]] || {
-    if [[ "$XDG_CONFIG_HOME" ]]; then
-      dir_rc="${XDG_CONFIG_HOME}/humblepie"
-    else
-      dir_rc="${HOME}/.config/humblepie"
-    fi
-  }
+  [[ "$dir_rc" ]] || dir_rc="${HOME}/.config/humblepie"
   rcfile="${dir_rc%/}/humblepie.rc"
   [[ ! -f "$rcfile" ]] && write_default_rc
   . "$rcfile"
@@ -273,7 +267,7 @@ usage() {
   printf -- " -d <dir>    Set the download directory\n"
   printf -- " -g <file>   Specify a file to download: must be full filename\n"
   printf -- " -k <key>    Specify a key manually: conflicts with -b\n"
-  printf -- " -s <term>   Case-insensitive search for files in bundle: requires -b or -k\n"
+  printf -- " -s <term>   Case-insensitive search for files in bundle: requires -b or -k, conflicts with -g\n"
   printf -- " -c          Enable md5 checking\n"
   printf -- " -h          Print this help\n"
   printf -- " -r          Enable operation as root, for system-wide installations *NOT RECOMMENDED*\n"
@@ -294,15 +288,20 @@ check_dir
 OPTIND=1
 while getopts ":b:d:g:k:s:chrv" opt; do
   case "$opt" in
-    b) ## just pick the bundle with the rcfile
-      unset hib_key
-      hib_key="hibkey_$OPTARG"
-      hib_key="${!hib_key}"
+    \?) ## usage, exit with error
+      echo "Invalid option specified."
+      usage
+      exit 1
       ;;
-    c) ## check_game should verify md5
-      check_md5=1
+    h) ## print usage
+      usage
+      exit
+      ;;
+    r) ## turn on root, for systemwide installs
+      asroot=1
       ;;
     C) ## set location to config file
+      unset rcfile
       rcfile="$OPTARG"
       . "$rcfile"
       ;;
@@ -310,27 +309,34 @@ while getopts ":b:d:g:k:s:chrv" opt; do
       unset dir_hib
       dir_hib="${OPTARG%/}"
       ;;
+    b) ## just pick the bundle with the rcfile
+      unset hib_key
+      hib_key="hibkey_$OPTARG"
+      hib_key="${!hib_key}"
+      ;;
+    k) ## specify a key manually
+      unset hib_key
+      hib_key="$OPTARG"
+      ;;
     g) ## pick a game to download
       unset dl_arg
       dl_arg="single"
       hib_game="$OPTARG"
       ;;
-    h) ## print usage
-      usage
-      exit
+    s) ## case insensitive searching
+      unset dl_arg hib_game
+      dl_arg="search"
+      search="$OPTARG"
       ;;
-    \?) ## usage, exit with error
-      echo "Invalid option specified."
-      usage
-      exit 1
+    c) ## check_game should verify md5
+      check_md5=1
+      ;;
+    v) ## enable verbosity
+      verbose=1
       ;;
     # i) ## not implemented
     #   dir_install="${OPTARG}"
     #   ;;
-    k) ## specify a key manually
-      unset hib_key
-      hib_key="$OPTARG"
-      ;;
     # m) ## set download method; not implemented
     #   case "${OPTARG}" in
     #     t|torrent) dl_method="torrent"
@@ -339,20 +345,9 @@ while getopts ":b:d:g:k:s:chrv" opt; do
     #       ;;
     #   esac
     #   ;;
-    r) ## turn on root, for systemwide installs
-      asroot=1
-      ;;
-    s) ## case insensitive searching
-      unset dl_arg
-      dl_arg="search"
-      search="$OPTARG"
-      ;;
     # t) ## set the hib_torrent_dir; not implemented
     #   hib_torrent_dir="${OPTARG}"
     #   ;;
-    v) ## enable verbosity
-      verbose=1
-      ;;
   esac
 done
 messaging
@@ -361,4 +356,5 @@ generate_list
 auto_dl_game "$dl_arg"
 }
 
+[[ "$@" ]] || usage && exit 1
 run "$@"
