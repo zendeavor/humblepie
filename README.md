@@ -13,7 +13,9 @@ humblepie [options]
 ##Configuration
 
 ```
-## Everything following the underbar ('\_') is the bundle name. you may set it to whatever you like, but the `hibkey_' prefix is mandatory for internal function. Those are the names used for the -b <name> option.
+## Everything following the underbar ('_') is the bundle name. you may set it to whatever you like.
+## Those are the names used for the -b <name> option.
+## But the `hibkey_' prefix is mandatory for internal function.
 hibkey_1="foobar"
 hibkey_2="foobar"
 hibkey_3="foobar"
@@ -31,52 +33,55 @@ hibkey_voxatron="foobar"
 ## This is the download directory.
 dir_hib="${HOME}/humbleindiebundle"
 
-## And you may turn these on with a value of 1, off with 0. Setting them to 1 is the equivalent of using -cv when invoking humblepie.
+## And you may turn these on with a value of 1, off with 0.
+## Setting them to 1 is the equivalent of using -cv when invoking humblepie.
 check_md5=1
 verbose=0
 ```
 
 ##Options
 
-    -b <name>
-        Specify a bundle by name according to the config file; For example:
-            hibkey_frozenbyte="0a1b2c3d" 
-            humblepie -b frozenbyte
+```
+-b <name>
+    Specify a bundle by name according to the config file; For example:
+        hibkey_frozenbyte="0a1b2c3d" 
+        humblepie -b frozenbyte
 
-    -c 
-        Enable checking md5 hashes: DEFAULT=1
+-c 
+    Enable checking md5 hashes: DEFAULT=1
 
-    -C <path>
-        Specify an alternate config file
+-C <path>
+    Specify an alternate config file
 
-    -d <path>
-        Specify a download directory. Overrides config option `hib_dir'.
+-d <path>
+    Specify a download directory. Overrides config option `hib_dir'.
 
-    -f <file>
-        Specify a file to download without prompting; For example, to download Amnesia;
-            humblepie -k 0a1b2c3d -f amnesia_tdd-1.2.1-3.sh
-    
-    -h
-        Print a usage message and exit
+-f <file>
+    Specify a file to download without prompting; For example, to download Amnesia;
+        humblepie -k 0a1b2c3d -f amnesia_tdd-1.2.1-3.sh
 
-    -k <key>
-        Specify a key manually. Overrides -b.
-        It is found at the end of your Humble Bundle download link:      
-          https://www.humblebundle.com/downloads?key=<YOUR KEY>
+-h
+    Print a usage message and exit
 
-    -r
-        Enable running as root for system-wide installs. *NOT RECOMMENDED*
+-k <key>
+    Specify a key manually. Overrides -b.
+    It is found at the end of your Humble Bundle download link:      
+      https://www.humblebundle.com/downloads?key=<YOUR KEY>
 
-    -s <term>
-        Specify a case-insensitive search to perform. Negates -g. For example:
-            To search for all files containing the string `super' in your named bundle `hibkey_4':
-            humblepie -b 4 -s super
+-r
+    Enable running as root for system-wide installs. *NOT RECOMMENDED*
 
-    -w
-        Write out a default config file and exit
+-s <term>
+    Specify a case-insensitive search to perform. Negates -g. For example:
+        To search for all files containing the string `super' in your named bundle `hibkey_4':
+        humblepie -b 4 -s super
 
-    -v
-        Enable verbose reporting for info, warnings, and errors.
+-w
+    Write out a default config file and exit
+
+-v
+    Enable verbose reporting for info, warnings, and errors.
+```
 
 ##Contact
 
