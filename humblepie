@@ -107,10 +107,10 @@ check_dir() {
     fi
   }
   rcfile="${dir_rc%/}/humblepie.rc"
-  [[ ! -f "$rcfile" && -w "${dir_rc%/}/.." ]] && {
+  if [[ ! -f "$rcfile" && -w "${dir_rc%/}/.." ]]; then
     mkdir -p "$dir_rc"
     write_default_rc
-  }
+  fi
   . "$rcfile"
 
   for dir in "${!dir_@}"; do
@@ -219,7 +219,7 @@ auto_dl_game () {
 
 user_list() {            
   unset dest; declare -Ag dest
-  PS3="Select a file by number, 0 to continue: "
+  PS3="Select files by number, continue with 0: "
 
   select choice in "$@"; do
     [[ "$choice" ]] || break
@@ -270,6 +270,7 @@ while getopts ":b:d:g:i:k:s:t:chrvV" opt; do
   [[ "$opt" == '?' ]] && echo "Missing arguments." && exit 1
   case "$opt" in
     b) ## just pick the bundle with the rcfile
+      unset hib_key
       hib_key="hibkey_$OPTARG"
       hib_key="${!hib_key}"
       ;;
