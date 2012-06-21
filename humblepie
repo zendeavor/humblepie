@@ -70,7 +70,8 @@ check_root() {
 }
 
 write_default_rc () {
-  cat >&1 >"$rcfile" <<"EOF"
+  mkdir -p "$dir_rc"
+  cat >"$rcfile" <<"EOF"
 # hibkey_1="foobar"
 # hibkey_2="foobar"
 # hibkey_3="foobar"
@@ -108,10 +109,7 @@ check_dir() {
     fi
   }
   rcfile="${dir_rc%/}/humblepie.rc"
-  if [[ ! -f "$rcfile" && -w "${dir_rc%/}/.." ]]; then
-    mkdir -p "$dir_rc"
-    write_default_rc
-  fi
+  [[ ! -f "$rcfile" ]] && write_default_rc
   . "$rcfile"
 
   for dir in "${!dir_@}"; do
@@ -354,8 +352,6 @@ while getopts ":b:d:g:k:s:chrv" opt; do
     #   ;;
     v) ## enable verbosity
       verbose=1
-      ;;
-    V) ## print version info
       ;;
   esac
 done
