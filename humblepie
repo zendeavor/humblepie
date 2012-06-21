@@ -265,7 +265,7 @@ usage() {
   printf -- " -b <name>   Choose the bundle specified in config\n"
   printf -- " -C <path>   Specify an alternate config file\n"
   printf -- " -d <dir>    Set the download directory\n"
-  printf -- " -g <file>   Specify a file to download: must be full filename\n"
+  printf -- " -f <file>   Specify a file to download: must be full filename\n"
   printf -- " -k <key>    Specify a key manually: overrides -b\n"
   printf -- " -s <term>   Case-insensitive search for files in bundle: requires -b or -k, overrides -g\n"
   printf -- " -c          Enable md5 checking\n"
@@ -286,7 +286,7 @@ run() {
 check_root
 check_dir
 OPTIND=1
-while getopts ":b:d:g:k:s:chrv" opt; do
+while getopts ":b:d:f:k:s:chrv" opt; do
   case "$opt" in
     \?) ## usage, exit with error
       echo "Invalid option specified."
@@ -318,7 +318,7 @@ while getopts ":b:d:g:k:s:chrv" opt; do
       unset hib_key
       hib_key="$OPTARG"
       ;;
-    g) ## pick a game to download
+    f) ## pick a game to download
       unset dl_arg
       dl_arg="single"
       hib_game="$OPTARG"
@@ -356,5 +356,7 @@ generate_list
 auto_dl_game "$dl_arg"
 }
 
-[[ "$@" ]] || usage && exit 1
+if [[ -z "$@" ]]; then
+  usage && exit 1
+fi
 run "$@"
