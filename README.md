@@ -6,10 +6,6 @@ humblepie downloads files from the Humble Indie Bundle Releases
 
 Humblepie is a bash script that will download [Humble Indie Bundle](https://www.humblebundle.com/) files and check the md5 sums. It will work with any Humble Bundle.
 
-##Usage
-
-humblepie [options]
-
 ##Configuration
 
 ```
@@ -38,6 +34,10 @@ dir_hib="${HOME}/humbleindiebundle"
 check_md5=1
 verbose=0
 ```
+
+##Usage
+
+humblepie [options]
 
 ##Options
 
