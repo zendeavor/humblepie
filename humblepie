@@ -107,7 +107,10 @@ check_dir() {
     fi
   }
   rcfile="${dir_rc%/}/humblepie.rc"
-  [[ ! -f "$rcfile" && -w "${dir_rc%/}" ]] && write_default_rc
+  [[ ! -f "$rcfile" && -w "${dir_rc%/}/.." ]] && {
+    mkdir -p $dir_rc
+    write_default_rc
+  }
   . "$rcfile"
 
   for dir in "${!dir_@}"; do
