@@ -285,6 +285,7 @@ usage() {
 run() {
 check_root
 check_dir
+
 OPTIND=1
 while getopts ":b:d:f:k:s:chrwv" opt; do
   case "$opt" in
@@ -353,6 +354,7 @@ while getopts ":b:d:f:k:s:chrwv" opt; do
     #   ;;
   esac
 done
+
 messaging
 generate_list
 [[ "$search" ]] && search_list
