@@ -30,6 +30,7 @@
 
 ## extglob is useful for matching with @()
 shopt -s extglob
+version="v0.3.3"
 
 ## if verbose is on, define verbose(). if off, define broken()
 ## this way, testing for verbose is only done a single time
@@ -262,12 +263,39 @@ check_sum() {
   done
 }
 
+usage() {
+  printf "humblepie %s\n" "$version"
+  echo
+  printf "Configuration should be done with ~/.config/humblepie/humblepie.rc\n"
+  printf -- "Usage: %s [options]\n" "${0%%*/}"
+  echo
+  printf -- "Options:\n"
+  printf -- " -b <name>   Choose the bundle specified in config\n"
+  printf -- " -C <path>   Specify an alternate config file\n"
+  printf -- " -d <dir>    Set the download directory\n"
+  printf -- " -g <file>   Specify a file to download: must be full filename\n"
+  printf -- " -k <key>    Specify a key manually: conflicts with -b\n"
+  printf -- " -s <term>   Case-insensitive search for files in bundle: requires -b or -k\n"
+  printf -- " -c          Enable md5 checking\n"
+  printf -- " -h          Print this help\n"
+  printf -- " -r          Enable operation as root, for system-wide installations *NOT RECOMMENDED*\n"
+  printf -- " -v          Turn on verbose reporting for info, warnings, errors\n"
+  echo
+  printf -- "\tEXAMPLES:\n"
+  echo
+  printf -- "\tUsing the key configured for hibkey_5, set download directory to ${HOME}/hib and search for \`psycho':\n"
+  printf -- "\t%s -b 5 -d ${HOME}/hib -s psycho\n" "${0%%*/}"
+  echo
+  printf -- "\tUsing bundle key 0a1b2c3d, download amnesia_tdd-1.2.1-3.sh without prompting:\n"
+  printf -- "\t%s -k 0a1b2c3d -g amnesia_tdd-1.2.1-3.sh\n" "${0%%*/}"
+  echo
+}
 run() {
 check_root
 check_dir
 OPTIND=1
-while getopts ":b:d:g:i:k:s:t:chrvV" opt; do
-  [[ "$opt" == '?' ]] && echo "Missing arguments." && exit 1
+while getopts ":b:d:g:k:s:chrv" opt; do
+  [[ "$opt" == '?' ]] && usage && exit 1
   case "$opt" in
     b) ## just pick the bundle with the rcfile
       unset hib_key
@@ -277,15 +305,22 @@ while getopts ":b:d:g:i:k:s:t:chrvV" opt; do
     c) ## check_game should verify md5
       check_md5=1
       ;;
+    C) ## set location to config file
+      rcfile="$OPTARG"
+      . "$rcfile"
+      ;;
     d) ## set the download dir
       unset dir_hib
       dir_hib="${OPTARG%/}"
       ;;
     g) ## pick a game to download
+      unset dl_arg
       dl_arg="single"
       hib_game="$OPTARG"
       ;;
-    h\?) ## print usage
+    h) ## print usage
+      usage
+      exit
       ;;
     # i) ## not implemented
     #   dir_install="${OPTARG}"
@@ -306,6 +341,7 @@ while getopts ":b:d:g:i:k:s:t:chrvV" opt; do
       asroot=1
       ;;
     s) ## case insensitive searching
+      unset dl_arg
       dl_arg="search"
       search="$OPTARG"
       ;;
