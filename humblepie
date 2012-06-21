@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # vim: ft=sh sw=2 sts=2 et
 ###############################################################################
-### v0.3.3
+### v0.4
 ### Copyright (c) 2012 Josh McGee
 ### 
 ### Permission is hereby granted, free of charge, to any person obtaining a 
@@ -30,18 +30,18 @@
 
 ## extglob is useful for matching with @()
 shopt -s extglob
-version="v0.3.3"
+version="v0.4"
 
 ## if verbose is on, define verbose(). if off, define broken()
 ## this way, testing for verbose is only done a single time
 ## probably a better way to do this, but we'll get around to it later
 messaging() {
   if (( verbose > 0 )); then
-    printf "%s\n" "Verbose reporting is on!"
     verbose() {
       ## verbose has no special return value associated with it
       ## WARNING: return 2; ERROR: return 1; else return 0
-      printf "==> %s:\t%s\n" "$1" "${@:2}"
+      printf "==> %s\n" "$1" "${@:2}"
+      [[ "$1" == "ERROR:" ]] && ret="1"
     } >&2
     broken() { false; } &>/dev/null
   else
@@ -49,7 +49,7 @@ messaging() {
       ## broken() always returns 1 because we _probably_ want to exit 
       printf "==> %s\n\t%s\n\t%s %s\n" "Something is wrong..." \
         "Try again with -v." "PROBLEM: " "$1" "${@:2}"
-      return 1
+      ret=1
     } >&2
     verbose() { false; } &>/dev/null
   fi
@@ -87,14 +87,11 @@ write_default_rc () {
 # hibkey_voxatron="foobar"
 
 # dir_hib="${HOME}/humbleindiebundle"
-# dir_hib_torrent="${dir_hib}/torrents" # not implemented
 ## set these to 1 to enable
 ## check md5sum of downloads
 check_md5=1
 ## spit out more detailed info, warnings, and errors
 verbose=0
-## turn on automatic checking/downloading updates; not implemented
-# update=0
 EOF
   echo "Created default config in ${dir_rc%/}" && exit
 }
@@ -103,29 +100,31 @@ check_dir() {
   ## pick a directory for config to live in
   [[ "$dir_rc" ]] || dir_rc="${HOME}/.config/humblepie"
   rcfile="${dir_rc%/}/humblepie.rc"
-  [[ ! -f "$rcfile" ]] && write_default_rc
-  . "$rcfile"
+  [[ -f "$rcfile" ]] && . "$rcfile"
 
   for dir in "${!dir_@}"; do
     case "$dir" in
       dir_hib)
         [[ -d "${dir_hib%/}" && -w "${dir_hib%/}" ]] || {
           dir_hib="${HOME}/humbleindiebundle"
-          verbose "INFO" "Using $dir_hib instead..."
+          verbose "INFO:" "Using $dir_hib instead..."
           mkdir -p $dir_hib
-        } ;;
+        }
+       ;;
       dir_hib_torrent)
         [[ -d "${dir_hib_torrent%/}" && -w "${dir_hib_torrent%/}" ]] || {
           dir_hib_torrent="${HOME}/humbleindiebundle/torrents"
-          verbose "INFO" "Using $dir_hib_torrent instead..."
+          verbose "INFO:" "Using $dir_hib_torrent instead..."
           mkdir -p $dir_hib_torrent
-        } ;;
+        }
+       ;;
       # dir_install)
       #   [[ -d "${dir_install%/}" && -w "${dir_install%/}" ]] || {
       #   dir_install="${HOME}/humbleindiebundle/install"
-      #   verbose "INFO" "Using $dir_install instead..."
+      #   verbose "INFO:" "Using $dir_install instead..."
       #   mkdir -p $dir_install
-      # } ;;
+      # }
+      # ;;
     esac
   done
 }
@@ -133,7 +132,7 @@ check_dir() {
 ## kudos to Riviera on #bash for help with this one o/
 generate_list() {
   unset IFS links list link dl
-  local game pattern; declare -Ag links; declare -ag list
+  local game pattern; declare -Ag links dest; declare -ag list
 
   ## needs to start with http obviously, then...
   ## ...strip out the ugly ubuntu link because lolcoupons...
@@ -143,11 +142,19 @@ generate_list() {
     ## check the line, make sure it's a proper link, then add it to list
     link="${link#* }"
     ## seems to strip important links =[
-    [[ "$link" == *files* ]] &&
+    [[ "$link" == *files\.* ]] &&
       list+=("$link")
         ## read in the links dump
   done < <(links -html-numbered-links 1 -dump \
             "https://www.humblebundle.com/downloads?key=${hib_key}")
+
+  ## the list will not be populated if a bad key was specified
+  [[ "${list[@]}" ]] || broken "Failed to find any valid downloads." || {
+    verbose "ERROR:" "No downloads could be found." \
+      "Verify that a valid key was specified with -k," \
+      "or properly configured in $rcfile."
+    }
+  (( ret == 1 )) && exit 1
 
   for dl in "${list[@]}"; do
     file="${dl#*files*/}"
@@ -158,52 +165,54 @@ generate_list() {
 }
 
 search_list() {
-  unset dl slist; declare -ag slist; declare -Ag slinks
-
+  unset dl slist slinks; declare -ag slist; declare -Ag slinks
+  ## loop through the keys of links array from generate_list
   for s in "${!links[@]}"; do
+    ## case-insensitive testing for a match and adding to a new array
     [[ "${s,,}" == +(*${search,,}*) ]] && slist+=("$s")
   done
 
+  ## make sure i got at least one result from the search
   [[ "${slist[@]}" ]] || {
     broken "No files matched the search." || {
-      verbose "ERROR" "The search was unsuccessful." \
+      verbose "ERROR:" "The search was unsuccessful." \
         "Please verify you specified a key or bundle and" \
         "spelled the search term correctly."
-      return 1
     }
   }
+  (( ret == 1 )) && exit 1
 
+  ## now build another array that is a subset of links, only matches to search
   for dl in "${slist[@]}"; do
     slinks["$dl"]="${links[$dl]}"
   done
 }
 
 auto_dl_game () {
-  unset downloads; declare -ag downloads
 
   case "$1" in
-    single)
+    single) ## array abuse so i can reuse the existing ones i built before
       downloads[0]="$hib_game"
       dest["$hib_game"]="${dir_hib}/$hib_game"
-      ;;
-    search)
+    ;;
+    search) ## only give the user the search results
       user_list "${slist[@]}"
-      ;;
-    *)
+    ;;
+    *) ## present the entire list
       user_list "${!links[@]}"
-      ;;
+    ;;
   esac
 
   ## loop through the choices
   for fn in "${downloads[@]}"; do
     ## make sure the game doesn't already exist
     if [[ -f "${dest[$fn]}" ]]; then
-      verbose "WARNING" "$fn already exists! Skipping..."
+      verbose "WARNING:" "$fn already exists! Skipping..."
     else
       ## then download it!
-      verbose "INFO" "Downloading $fn..."
+      verbose "INFO:" "Downloading $fn..."
       curl -# -o "${dest[$fn]}" "${links[$fn]}" &&
-        verbose "INFO" "Finished downloading ${fn}!"
+        verbose "INFO:" "Finished downloading ${fn}!"
     fi
   done
 
@@ -211,7 +220,8 @@ auto_dl_game () {
 }
 
 user_list() {            
-  unset dest; declare -Ag dest
+  unset downloads; declare -Ag dest; declare -ag downloads
+  ## select uses $PS3
   PS3="Select files by number, continue with 0: "
 
   select choice in "$@"; do
@@ -221,11 +231,16 @@ user_list() {
     ## now populate this associative array last using index of ${downloads[@]}
     dest[$choice]="${dir_hib%/}/${downloads[@]:(-1)}"
   done
+  if [[ -z "${downloads[@]}" ]]; then
+    verbose "WARNING:" "No download specified."
+    exit
+  fi
 }
 
 check_sum() {
   unset md5 sums dl; local md5; declare -a sums
 
+  ## need to build the array of checksums from my big fat links array
   for dl in "${list[@]}"; do
     [[ "$dl" == *downloads*#* ]] && {
       cksum="${dl#*#}"
@@ -246,12 +261,12 @@ check_sum() {
     for sum in "${sums[@]}"; do
       [[ "${md5^^}" == "${sum^^}" ]] && {
         success="1"
-        verbose "INFO" "The md5 for $g is okay!"
+        verbose "INFO:" "The md5 for $g is okay!"
         break
       }
     done
     (( success < 1 )) && broken "Checksums did not match." ||
-       verbose "INFO" "The md5 for $g ($md5) did not match $sum"
+       verbose "WARNING:" "The md5 for $g ($md5) did not match $sum"
   done
 }
 
@@ -259,7 +274,7 @@ usage() {
   printf "humblepie %s\n" "$version"
   echo
   printf "Configuration should be done with ~/.config/humblepie/humblepie.rc\n"
-  printf -- "Usage: %s [options]\n" "${0%%*/}"
+  printf -- "Usage: %s [options]\n" "${0##*/}"
   echo
   printf -- "Options:\n"
   printf -- " -b <name>   Choose the bundle specified in config\n"
@@ -271,94 +286,95 @@ usage() {
   printf -- " -c          Enable md5 checking\n"
   printf -- " -h          Print this help\n"
   printf -- " -r          Enable operation as root, for system-wide installations *NOT RECOMMENDED*\n"
+  printf -- " -w          Write out a default config and exit\n"
   printf -- " -v          Turn on verbose reporting for info, warnings, errors\n"
   echo
   printf -- "\tEXAMPLES:\n"
   echo
   printf -- "\tUsing hibkey_5, set download directory to ${HOME}/hib and search for \`psycho':\n"
-  printf -- "\t%s -b 5 -d ${HOME}/hib -s psycho\n" "${0%%*/}"
+  printf -- "\t%s -b 5 -d ${HOME}/hib -s psycho\n" "${0##*/}"
   echo
   printf -- "\tUsing bundle key 0a1b2c3d, download amnesia_tdd-1.2.1-3.sh without prompting:\n"
-  printf -- "\t%s -k 0a1b2c3d -g amnesia_tdd-1.2.1-3.sh\n" "${0%%*/}"
+  printf -- "\t%s -k 0a1b2c3d -g amnesia_tdd-1.2.1-3.sh\n" "${0##*/}"
   echo
 }
 run() {
-check_root
-check_dir
+    check_root
+    check_dir
 
-OPTIND=1
-while getopts ":b:d:f:k:s:chrwv" opt; do
-  case "$opt" in
-    \?) ## usage, exit with error
-      echo "Invalid option specified."
-      usage
-      exit 1
-      ;;
-    h) ## print usage
-      usage
-      exit
-      ;;
-    w) ## write a config and exit
-      write_default_rc
-      ;;
-    r) ## turn on root, for systemwide installs
-      asroot=1
-      ;;
-    C) ## set location to config file
-      unset rcfile
-      rcfile="$OPTARG"
-      . "$rcfile"
-      ;;
-    d) ## set the download dir
-      unset dir_hib
-      dir_hib="${OPTARG%/}"
-      ;;
-    b) ## just pick the bundle with the rcfile
-      unset hib_key
-      hib_key="hibkey_$OPTARG"
-      hib_key="${!hib_key}"
-      ;;
-    k) ## specify a key manually
-      unset hib_key
-      hib_key="$OPTARG"
-      ;;
-    f) ## pick a game to download
-      unset dl_arg
-      dl_arg="single"
-      hib_game="$OPTARG"
-      ;;
-    s) ## case insensitive searching
-      unset dl_arg hib_game
-      dl_arg="search"
-      search="$OPTARG"
-      ;;
-    c) ## check_game should verify md5
-      check_md5=1
-      ;;
-    v) ## enable verbosity
-      verbose=1
-      ;;
-    # i) ## not implemented
-    #   dir_install="${OPTARG}"
-    #   ;;
-    # m) ## set download method; not implemented
-    #   case "${OPTARG}" in
-    #     t|torrent) dl_method="torrent"
-    #       ;;
-    #     h|http) dl_method="http"
-    #       ;;
-    #   esac
-    #   ;;
-    # t) ## set the hib_torrent_dir; not implemented
-    #   hib_torrent_dir="${OPTARG}"
-    #   ;;
-  esac
-done
+    OPTIND=1
+    while getopts ":b:d:f:k:s:chrwv" opt; do
+      case "$opt" in
+        \?) ## usage, exit with error
+          echo "Invalid option specified." >&2
+          usage
+          exit 1
+        ;;
+        h) ## print usage
+          usage
+          exit
+        ;;
+        w) ## write a config and exit
+          write_default_rc
+        ;;
+        r) ## turn on root, for systemwide installs
+          asroot=1
+        ;;
+        C) ## set location to config file
+          unset rcfile
+          rcfile="$OPTARG"
+          . "$rcfile"
+        ;;
+        d) ## set the download dir
+          unset dir_hib
+          dir_hib="${OPTARG%/}"
+        ;;
+        b) ## just pick the bundle with the rcfile
+          unset hib_key
+          hib_key="hibkey_$OPTARG"
+          hib_key="${!hib_key}"
+        ;;
+        k) ## specify a key manually
+          unset hib_key
+          hib_key="$OPTARG"
+        ;;
+        f) ## pick a game to download
+          unset dl_arg hib_game
+          dl_arg="single"
+          hib_game="$OPTARG"
+        ;;
+        s) ## case insensitive searching
+          unset dl_arg hib_game
+          dl_arg="search"
+          search="$OPTARG"
+        ;;
+        c) ## check_game should verify md5
+          check_md5=1
+        ;;
+        v) ## enable verbosity
+          verbose=1
+        ;;
+        # i) ## not implemented
+        #   dir_install="${OPTARG}"
+        # ;;
+        # m) ## set download method; not implemented
+        #   case "${OPTARG}" in
+        #     t|torrent) dl_method="torrent"
+            # ;;
+        #     h|http) dl_method="http"
+            # ;;
+        #   esac
+        # ;;
+        # t) ## set the hib_torrent_dir; not implemented
+        #   hib_torrent_dir="${OPTARG}"
+        # ;;
+      esac
+    done
 
-messaging
-generate_list
-[[ "$search" ]] && search_list
-auto_dl_game "$dl_arg"
+    messaging
+    generate_list
+    [[ "$search" ]] && search_list
+    auto_dl_game "$dl_arg"
 }
 
 if [[ -z "$@" ]]; then

@@ -1,0 +1,25 @@
+## replace `foobar' with your key
+hibkey_1="foobar"
+hibkey_2="foobar"
+hibkey_3="foobar"
+hibkey_4="foobar"
+hibkey_5="foobar"
+hibkey_android1="foobar"
+hibkey_android2="foobar"
+hibkey_botanicula="foobar"
+hibkey_frozenbyte="foobar"
+hibkey_frozensynapse="foobar"
+hibkey_introversion="foobar"
+hibkey_mojang="foobar"
+hibkey_voxatron="foobar"
+
+## the download directory
+dir_hib="${HOME}/hib"
+
+## set these to 1 to enable, 0 to disable
+## check md5sum of downloads
+check_md5=1
+## spit out more detailed info, warnings, and errors
+verbose=0
+
+# vim: ft=sh
