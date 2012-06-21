@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # vim: ft=sh sw=2 sts=2 et
 ###############################################################################
-### v0.3
+### v0.3.2
 ### Copyright (c) 2012 Josh McGee
 ### 
 ### Permission is hereby granted, free of charge, to any person obtaining a 
@@ -36,7 +36,6 @@ shopt -s extglob
 ## probably a better way to do this, but we'll get around to it later
 messaging() {
   if (( verbose > 0 )); then
-    ## i would like to incorporate some gettext action in here
     printf "%s\n" "Verbose reporting is on!"
     verbose() {
       ## verbose has no special return value associated with it
@@ -59,42 +58,41 @@ check_root() {
   (( EUID == 0 )) && {
     ## check if they used root on purpose
     if  (( asroot > 0 )); then
-      verbose="1"; exit
+      verbose="1"
       ## they're already root at this point, so further checking is moot
       dir_rc="/etc/humblepie"
+    else
+      echo "Running as root requires -r!"
+      exit
     fi
   }
 }
 
 write_default_rc () {
-  cat >&1 >"$rcfile" <<"EOF"
-# hibkey_1="foobar"
-# hibkey_2="foobar"
-# hibkey_3="foobar"
-# hibkey_4="foobar"
-# hibkey_5="foobar"
-# hibkey_android1="foobar"
-# hibkey_android2="foobar"
-# hibkey_botanicula="foobar"
-# hibkey_frozenbyte="foobar"
-# hibkey_frozensynapse="foobar"
-# hibkey_introversion="foobar"
-# hibkey_mojang="foobar"
-# hibkey_voxatron="foobar"
+  cat >&1 >"$rcfile" <<-"EOF"
+    # hibkey_1="foobar"
+    # hibkey_2="foobar"
+    # hibkey_3="foobar"
+    # hibkey_4="foobar"
+    # hibkey_5="foobar"
+    # hibkey_android1="foobar"
+    # hibkey_android2="foobar"
+    # hibkey_botanicula="foobar"
+    # hibkey_frozenbyte="foobar"
+    # hibkey_frozensynapse="foobar"
+    # hibkey_introversion="foobar"
+    # hibkey_mojang="foobar"
+    # hibkey_voxatron="foobar"
 
-# dir_hib="${HOME}/humbleindiebundle"
-# dir_hib_torrent="${dir_hib}/torrents"
-## set these to 1 to enable
-## allow running as root (for systemwide installations)
-asroot=0
-## test key for validity
-check_key=1
-## check md5sum of downloads
-check_md5=1
-## spit out more detailed info, warnings, and errors
-verbose=0
-## turn on automatic checking/downloading updates
-# update=0
+    # dir_hib="${HOME}/humbleindiebundle"
+    # dir_hib_torrent="${dir_hib}/torrents"
+    ## set these to 1 to enable
+    ## check md5sum of downloads
+    check_md5=1
+    ## spit out more detailed info, warnings, and errors
+    verbose=0
+    ## turn on automatic checking/downloading updates; not implemented
+    # update=0
 EOF
   echo "Created default config in ${dir_rc%/}" && exit
 }
@@ -124,6 +122,12 @@ check_dir() {
           verbose "INFO" "Using $dir_hib_torrent instead..."
           mkdir -p $dir_hib_torrent
         } ;;
+      # dir_install)
+      #   [[ -d "${dir_install%/}" && -w "${dir_install%/}" ]] || {
+      #   dir_install="${HOME}/humbleindiebundle/install"
+      #   verbose "INFO" "Using $dir_install instead..."
+      #   mkdir -p $dir_install
+      # } ;;
     esac
   done
 }
@@ -136,23 +140,22 @@ generate_list() {
   ## needs to start with http obviously, then...
   ## ...strip out the ugly ubuntu link because lolcoupons...
   ## ...and only use links with key= in them
-  # pattern+='http!(*ubuntu*)key=*'
+  # pattern='http!(*ubuntu*)key=*'
   while read -r link; do
     ## check the line, make sure it's a proper link, then add it to list
     link="${link#* }"
-    # [[ "$link" == $pattern ]] ## seems to strip important links =[
-    list+=("$link")
+    ## seems to strip important links =[
+    [[ "$link" == *files* ]] &&
+      list+=("$link")
         ## read in the links dump
   done < <(links -html-numbered-links 1 -dump \
             "https://www.humblebundle.com/downloads?key=${hib_key}")
 
   for dl in "${list[@]}"; do
-    [[ "$dl" == *files* ]] && {
-      file="${dl#*files*/}"
-      ## strip everything after '?key=' to get a filename
-      file="${file%%\?*}"
-      links["$file"]="$dl"
-    }
+    file="${dl#*files*/}"
+    ## strip everything after '?key=' to get a filename
+    file="${file%%\?*}"
+    links["$file"]="$dl"
   done
 }
 
@@ -211,11 +214,6 @@ auto_dl_game () {
 
 user_list() {            
   unset dest; declare -Ag dest
-
-  # for word in "$@"; do
-  #   list+=("$word")
-  # done
-
   PS3="Select a file by number, 0 to continue: "
 
   select choice in "$@"; do
@@ -260,8 +258,8 @@ check_sum() {
 }
 
 run() {
-asroot="${asroot:=0}"
-check_files
+check_root
+check_dir
 OPTIND=1
 while getopts ":b:d:g:i:k:s:t:chrvV" opt; do
   [[ "$opt" == '?' ]] && echo "Missing arguments." && exit 1
@@ -273,7 +271,7 @@ while getopts ":b:d:g:i:k:s:t:chrvV" opt; do
     c) ## check_game should verify md5
       check_md5=1
       ;;
-    d) ## set the download/game dir
+    d) ## set the download dir
       unset dir_hib
       dir_hib="${OPTARG%/}"
       ;;
@@ -315,8 +313,6 @@ while getopts ":b:d:g:i:k:s:t:chrvV" opt; do
       ;;
   esac
 done
-check_root
-check_dir
 messaging
 generate_list
 [[ "$search" ]] && search_list
