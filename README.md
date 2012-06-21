@@ -12,7 +12,7 @@ humblepie [options]
 
 ##Configuration
 
-Everything following the underbar ('_') is the bundle name. you may set it to whatever you like, but the `hibkey_' prefix is mandatory for internal function. Those are the names used for the -b <name> option.
+Everything following the underbar ('\_') is the bundle name. you may set it to whatever you like, but the `hibkey_' prefix is mandatory for internal function. Those are the names used for the -b <name> option.
 hibkey_1="foobar"
 hibkey_2="foobar"
 hibkey_3="foobar"
