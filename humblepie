@@ -69,30 +69,30 @@ check_root() {
 }
 
 write_default_rc () {
-  cat >&1 >"$rcfile" <<-"EOF"
-    # hibkey_1="foobar"
-    # hibkey_2="foobar"
-    # hibkey_3="foobar"
-    # hibkey_4="foobar"
-    # hibkey_5="foobar"
-    # hibkey_android1="foobar"
-    # hibkey_android2="foobar"
-    # hibkey_botanicula="foobar"
-    # hibkey_frozenbyte="foobar"
-    # hibkey_frozensynapse="foobar"
-    # hibkey_introversion="foobar"
-    # hibkey_mojang="foobar"
-    # hibkey_voxatron="foobar"
+  cat >&1 >"$rcfile" <<"EOF"
+# hibkey_1="foobar"
+# hibkey_2="foobar"
+# hibkey_3="foobar"
+# hibkey_4="foobar"
+# hibkey_5="foobar"
+# hibkey_android1="foobar"
+# hibkey_android2="foobar"
+# hibkey_botanicula="foobar"
+# hibkey_frozenbyte="foobar"
+# hibkey_frozensynapse="foobar"
+# hibkey_introversion="foobar"
+# hibkey_mojang="foobar"
+# hibkey_voxatron="foobar"
 
-    # dir_hib="${HOME}/humbleindiebundle"
-    # dir_hib_torrent="${dir_hib}/torrents"
-    ## set these to 1 to enable
-    ## check md5sum of downloads
-    check_md5=1
-    ## spit out more detailed info, warnings, and errors
-    verbose=0
-    ## turn on automatic checking/downloading updates; not implemented
-    # update=0
+# dir_hib="${HOME}/humbleindiebundle"
+# dir_hib_torrent="${dir_hib}/torrents"
+## set these to 1 to enable
+## check md5sum of downloads
+check_md5=1
+## spit out more detailed info, warnings, and errors
+verbose=0
+## turn on automatic checking/downloading updates; not implemented
+# update=0
 EOF
   echo "Created default config in ${dir_rc%/}" && exit
 }
