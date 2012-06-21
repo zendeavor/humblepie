@@ -286,7 +286,7 @@ run() {
 check_root
 check_dir
 OPTIND=1
-while getopts ":b:d:f:k:s:chrv" opt; do
+while getopts ":b:d:f:k:s:chrwv" opt; do
   case "$opt" in
     \?) ## usage, exit with error
       echo "Invalid option specified."
@@ -296,6 +296,9 @@ while getopts ":b:d:f:k:s:chrv" opt; do
     h) ## print usage
       usage
       exit
+      ;;
+    w) ## write a config and exit
+      write_default_rc
       ;;
     r) ## turn on root, for systemwide installs
       asroot=1
