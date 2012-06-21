@@ -47,8 +47,8 @@ messaging() {
   else
     broken() {
       ## broken() always returns 1 because we _probably_ want to exit 
-      printf "==> %s\n\t%s\t%s %s\n" "Something is wrong..." \
-        " Try again with -v." "PROBLEM: " "$1" "${@:2}"
+      printf "==> %s\n\t%s\n\t%s %s\n" "Something is wrong..." \
+        "Try again with -v." "PROBLEM: " "$1" "${@:2}"
       return 1
     } >&2
     verbose() { false; } &>/dev/null
@@ -166,8 +166,8 @@ search_list() {
 
   [[ "${slist[@]}" ]] || {
     broken "No files matched the search." || {
-      verbose "ERROR" "The search was unsuccessful.\n" \
-        "\tPlease verify you specified a key or bundle and" \
+      verbose "ERROR" "The search was unsuccessful." \
+        "Please verify you specified a key or bundle and" \
         "spelled the search term correctly."
       return 1
     }
