@@ -87,7 +87,7 @@ write_default_rc () {
 # hibkey_voxatron="foobar"
 
 # dir_hib="${HOME}/humbleindiebundle"
-# dir_hib_torrent="${dir_hib}/torrents"
+# dir_hib_torrent="${dir_hib}/torrents" # not implemented
 ## set these to 1 to enable
 ## check md5sum of downloads
 check_md5=1
