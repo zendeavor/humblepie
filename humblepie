@@ -142,7 +142,7 @@ generate_list() {
     ## check the line, make sure it's a proper link, then add it to list
     link="${link#* }"
     ## seems to strip important links =[
-    [[ "$link" == *files\.* ]] &&
+    [[ "$link" == *downloads\?* ]] &&
       list+=("$link")
         ## read in the links dump
   done < <(links -html-numbered-links 1 -dump \
@@ -157,10 +157,12 @@ generate_list() {
   (( ret == 1 )) && exit 1
 
   for dl in "${list[@]}"; do
+    [[ "$dl" == *files\.* ]] && {
     file="${dl#*files*/}"
     ## strip everything after '?key=' to get a filename
     file="${file%%\?*}"
     links["$file"]="$dl"
+    }
   done
 }
 
@@ -261,12 +263,14 @@ check_sum() {
     for sum in "${sums[@]}"; do
       [[ "${md5^^}" == "${sum^^}" ]] && {
         success="1"
-        verbose "INFO:" "The md5 for $g is okay!"
+        verbose "INFO:" "The md5 for ${dir_hib%/}/$file is okay!"
         break
       }
     done
-    (( success < 1 )) && broken "Checksums did not match." ||
-       verbose "WARNING:" "The md5 for $g ($md5) did not match $sum"
+    (( success < 1 )) && {
+      broken "Checksums did not match." ||
+       verbose "WARNING:" "The md5 for ${dir_hib%/}/$file ($md5) did not check out!"
+    }
   done
 }
 
