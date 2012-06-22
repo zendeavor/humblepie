@@ -152,7 +152,7 @@ generate_list() {
 
   for dl in "${list[@]}"; do
     for ex in "${exclude[@],,}"; do
-      if [[ "${dl,,}" != @(*${ex})* ]]; then
+      if [[ "${dl,,}" != +(*${ex})* ]]; then
         if [[ "$dl" == *files\.* ]]; then
           file="${dl#*files*/}"
           file="${file%%\?*}"
