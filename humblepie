@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # vim: ft=sh sw=2 sts=2 et
 ###############################################################################
-### v0.4
+### v0.4.1
 ### Copyright (c) 2012 Josh McGee
 ### 
 ### Permission is hereby granted, free of charge, to any person obtaining a 
@@ -30,7 +30,7 @@
 
 ## extglob is useful for matching with @()
 shopt -s extglob
-version="v0.4"
+version="v0.4.1"
 
 ## if verbose is on, define verbose(). if off, define broken()
 ## this way, testing for verbose is only done a single time
