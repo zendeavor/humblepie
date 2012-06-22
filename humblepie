@@ -142,7 +142,7 @@ generate_list() {
     ## check the line, make sure it's a proper link, then add it to list
     link="${link#* }"
     ## seems to strip important links =[
-    [[ "$link" == *downloads\?* ]] &&
+    [[ "$link" == *http*@(www|files)* ]] &&
       list+=("$link")
         ## read in the links dump
   done < <(links -html-numbered-links 1 -dump \
