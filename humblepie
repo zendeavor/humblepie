@@ -291,8 +291,6 @@ run() {
         ;;
         w) ## write a config and exit
           check_dir
-          write_default_rc
-          exit
         ;;
         r) ## turn on root, for systemwide installs
           asroot=1
