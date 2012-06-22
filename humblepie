@@ -3,23 +3,23 @@
 ###############################################################################
 ### v0.4.1
 ### Copyright (c) 2012 Josh McGee
-### 
-### Permission is hereby granted, free of charge, to any person obtaining a 
+###
+### Permission is hereby granted, free of charge, to any person obtaining a
 ### copy of this software and associated documentation files (the "Software"),
-### to deal in the Software without restriction, including without limitation 
-### the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-### and/or sell copies of the Software, and to permit persons to whom the 
+### to deal in the Software without restriction, including without limitation
+### the rights to use, copy, modify, merge, publish, distribute, sublicense,
+### and/or sell copies of the Software, and to permit persons to whom the
 ### Software is furnished to do so, subject to the following conditions:
-### 
-### The above copyright notice and this permission notice shall be included in 
+###
+### The above copyright notice and this permission notice shall be included in
 ### all copies or substantial portions of the Software.
-### 
-### THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-### IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-### FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL 
-### THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-### LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-### FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+###
+### THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+### IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+### FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+### THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+### LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+### FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ### DEALINGS IN THE SOFTWARE.
 ###
 ###############################################################################
@@ -46,7 +46,7 @@ messaging() {
     broken() { true; } &>/dev/null
   else
     broken() {
-      ## broken() always returns 1 because we _probably_ want to exit 
+      ## broken() always returns 1 because we _probably_ want to exit
       printf "==> %s\n\t%s\n\t%s %s\n" "Something is wrong..." \
         "Try again with -v." "PROBLEM: " "$1" "${@:2}"
       ret=1
@@ -155,7 +155,11 @@ generate_list() {
       "Verify that a valid key was specified with -k," \
       "or properly configured in $rcfile."
   fi
-  (( ret == 1 )) && exit 1
+  if (( ret == 1 )); then
+    exit 1
+  else
+    true
+  fi
 
   for dl in "${list[@]}"; do
     [[ "$dl" == *files\.* ]] && {
@@ -182,7 +186,11 @@ search_list() {
       "Please verify you specified a key or bundle and" \
       "spelled the search term correctly."
     fi
-  (( ret == 1 )) && exit 1
+  if (( ret == 1 )); then
+    exit 1
+  else
+    true
+  fi
 
   ## now build another array that is a subset of links, only matches to search
   for dl in "${slist[@]}"; do
@@ -218,10 +226,14 @@ auto_dl_game () {
     fi
   done
 
-  (( check_md5 > 0 )) && check_sum
+  if (( check_md5 > 0 )); then
+    check_sum
+  else
+    true
+  fi
 }
 
-user_list() {            
+user_list() {
   unset downloads; declare -Ag dest; declare -ag downloads
   ## select uses $PS3
   PS3="Select files by number, continue with 0: "
@@ -270,6 +282,8 @@ check_sum() {
     if (( success < 1 )); then
       broken "Checksums did not match."
       verbose "WARNING:" "The md5 for ${dir_hib%/}/$file ($md5) did not check out!"
+    else 
+      return
     fi
   done
 }
