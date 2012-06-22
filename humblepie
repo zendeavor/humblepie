@@ -88,10 +88,17 @@ write_default_rc () {
 } >"$rcfile"
 
 check_dir() {
+  messaging
   [[ "$dir_rc" ]] || dir_rc="${HOME}/.config/humblepie"
   dir_rc="${dir_rc%/}"
   rcfile="${dir_rc}/humblepie.rc"
-  [[ -f "$rcfile" ]] && . "$rcfile"
+  if [[ -f "$rcfile" ]]; then
+    . "$rcfile"
+  else
+    echo "No config found, writing..."
+    write_default_rc
+    exit 1
+  fi
 
   if [[ "$dir_hib" && ! -d "$dir_hib" ]]; then
     mkdir -p "$dir_hib"
@@ -279,6 +286,9 @@ run() {
           usage
           exit
         ;;
+        v) ## enable verbosity
+          verbose=1
+        ;;
         w) ## write a config and exit
           check_dir
           write_default_rc
@@ -298,7 +308,6 @@ run() {
         ;;
         b) ## just pick the bundle with the rcfile
           unset hib_key
-          messaging
           check_dir
           hib_key="hibkey_$OPTARG"
           hib_key="${!hib_key}"
@@ -319,9 +328,6 @@ run() {
         ;;
         c) ## check_game should verify md5
           check_md5=1
-        ;;
-        v) ## enable verbosity
-          verbose=1
         ;;
       esac
     done
