@@ -138,9 +138,7 @@ generate_list() {
   local game; declare -Ag links dest; declare -ag list
 
   while read -r _ link; do
-    # link="${link#* }"
-    [[ "$link" == http*@(www|files)* ]] &&
-      list+=("$link")
+        [[ "$link" == *@(www|files)* ]] && list+=("$link")
   done < <(links -html-numbered-links 1 -dump \
             "https://www.humblebundle.com/downloads?key=${hib_key}")
 
@@ -153,18 +151,23 @@ generate_list() {
   (( ret != 1 ))
 
   for dl in "${list[@]}"; do
-  if [[ "$dl" == *files\.* ]]; then
-    file="${dl#*files*/}"
-    file="${file%%\?*}"
-    links["$file"]="$dl"
-  fi
+    for ex in "${exclude[@],,}"; do
+      if [[ "${dl,,}" != @(*${ex})* ]]; then
+        if [[ "$dl" == *files\.* ]]; then
+          file="${dl#*files*/}"
+          file="${file%%\?*}"
+          links["$file"]="$dl"
+        fi
+      fi
+    done
   done
+
 }
 
 search_list() {
   unset dl slist slinks; declare -ag slist; declare -Ag slinks
   for s in "${!links[@]}"; do
-    [[ "${s,,}" == +(*${search,,}*) ]] && slist+=("$s")
+    [[ "${s,,}" == +(*${search,,})* ]] && slist+=("$s")
   done
 
   if [[ -z "${slist[@]}" ]]; then
@@ -275,7 +278,7 @@ usage() {
 
 run() {
     OPTIND=1
-    while getopts ":b:C:d:f:k:s:chrwv" opt; do
+    while getopts ":b:C:d:e:f:k:s:chrwv" opt; do
       case "$opt" in
         \?) ## usage, exit with error
           echo "Invalid option specified." >&2
@@ -320,9 +323,12 @@ run() {
           hib_game="$OPTARG"
         ;;
         s) ## case insensitive searching
-          unset dl_arg hib_game
+          unset hib_game
           dl_arg="search"
-          search="$OPTARG"
+          search+=("$OPTARG")
+        ;;
+        e) ## exclusion from search
+          exclude+=("$OPTARG")
         ;;
         c) ## check_game should verify md5
           check_md5=1
