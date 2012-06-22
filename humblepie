@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # vim: ft=sh sw=2 sts=2 et
 #######################################################################
-### v0.4.2
+### v0.4.3
 ### Copyright (c) 2012 Josh McGee
 ###
 ### Permission is hereby granted, free of charge, to any person 
@@ -32,7 +32,7 @@
 
 set -e
 shopt -s extglob
-version="v0.4.2"
+version="v0.4.3"
 
 messaging() {
   if (( verbose > 0 )); then
@@ -92,12 +92,17 @@ check_dir() {
   dir_rc="${dir_rc%/}"
   rcfile="${dir_rc}/humblepie.rc"
   [[ -f "$rcfile" ]] && . "$rcfile"
-  if [[ ! -d "$dir_hib" ]]; then
+
+  if [[ "$dir_hib" && ! -d "$dir_hib" ]]; then
+    mkdir -p "$dir_hib"
+  elif [[ -z "$dir_hib" ]]; then
     broken "No download directory."
     verbose "ERROR" "Specify a download directory in $rcfile," \
       "or with -d <dir>."
   fi
+
   (( ret != 1 ))
+
   for dir in "${!dir_@}"; do
     case "$dir" in
       dir_hib)
