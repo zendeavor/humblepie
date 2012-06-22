@@ -307,7 +307,7 @@ run() {
     check_dir
 
     OPTIND=1
-    while getopts ":b:d:f:k:s:chrwv" opt; do
+    while getopts ":b:C:d:f:k:s:chrwv" opt; do
       case "$opt" in
         \?) ## usage, exit with error
           echo "Invalid option specified." >&2
