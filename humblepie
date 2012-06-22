@@ -1,46 +1,43 @@
 #!/usr/bin/env bash
 # vim: ft=sh sw=2 sts=2 et
-###############################################################################
+#######################################################################
 ### v0.4.1
 ### Copyright (c) 2012 Josh McGee
 ###
-### Permission is hereby granted, free of charge, to any person obtaining a
-### copy of this software and associated documentation files (the "Software"),
-### to deal in the Software without restriction, including without limitation
-### the rights to use, copy, modify, merge, publish, distribute, sublicense,
-### and/or sell copies of the Software, and to permit persons to whom the
-### Software is furnished to do so, subject to the following conditions:
+### Permission is hereby granted, free of charge, to any person 
+### obtaining a copy of this software and associated documentation
+### files (the "Software"), to deal in the Software without 
+### restriction, including without limitation the rights to use, copy,
+### modify, merge, publish, distribute, sublicense, and/or sell copies
+### of the Software, and to permit persons to whom the Software is
+### furnished to do so, subject to the following conditions:
 ###
-### The above copyright notice and this permission notice shall be included in
-### all copies or substantial portions of the Software.
+### The above copyright notice and this permission notice shall be 
+### included in all copies or substantial portions of the Software.
 ###
-### THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-### IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-### FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-### THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-### LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-### FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-### DEALINGS IN THE SOFTWARE.
+### THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+### EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
+### OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
+### NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+### BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+### ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
+### CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+### SOFTWARE.
 ###
-###############################################################################
+#######################################################################
 
 ## comments starting with a single octothorpe are experimental code
 ## more than one octothorpe signifies detail or instructional comments
+## all lines are 72cols or less, except printf statements
 
-## make bash do the exits for me
 set -e
-## extglob is useful for matching with @()
 shopt -s extglob
 version="v0.4.1"
 
-## if verbose is on, define verbose(). if off, define broken()
-## this way, testing for verbose is only done a single time
-## probably a better way to do this, but we'll get around to it later
 messaging() {
   if (( verbose > 0 )); then
     verbose() {
-      ## verbose has no special return value associated with it
-      ## WARNING: return 2; ERROR: return 1; else return 0
+      ## ERROR: return 1; else return 0
       printf "==> %s\n" "$1" "${@:2}"
       [[ "$1" == "ERROR:" ]] && ret="1"
     } >&2
@@ -48,8 +45,8 @@ messaging() {
   else
     broken() {
       ## broken() always returns 1 because we _probably_ want to exit
-      printf "==> %s\n\t%s\n\t%s %s\n" "Something is wrong..." \
-        "Try again with -v." "PROBLEM: " "$1" "${@:2}"
+      printf "==> %s\n" "Something is wrong..." \
+        "Try again with -v." "PROBLEM:" "$1" "${@:2}"
       ret=1
     } >&2
     verbose() { true; } &>/dev/null
@@ -60,70 +57,65 @@ check_root() {
   if (( EUID != 0 )); then
     return
   else
-    ## check if they used root on purpose
     verbose="1"
+    messaging
+    dir_rc="/etc/humblepie"
     (( asroot > 0 )) || verbose "ERROR" "Running as root requires -r!"
-      ## they're already root at this point, so further checking is moot
-      dir_rc="/etc/humblepie"
   fi
 }
 
 write_default_rc () {
-  mkdir -p "$dir_rc"
-  cat >"$rcfile" <<"EOF"
-# hibkey_1="foobar"
-# hibkey_2="foobar"
-# hibkey_3="foobar"
-# hibkey_4="foobar"
-# hibkey_5="foobar"
-# hibkey_android1="foobar"
-# hibkey_android2="foobar"
-# hibkey_botanicula="foobar"
-# hibkey_frozenbyte="foobar"
-# hibkey_frozensynapse="foobar"
-# hibkey_introversion="foobar"
-# hibkey_mojang="foobar"
-# hibkey_voxatron="foobar"
-
-# dir_hib="${HOME}/humbleindiebundle"
-## set these to 1 to enable
-## check md5sum of downloads
-check_md5=1
-## spit out more detailed info, warnings, and errors
-verbose=0
-EOF
-  echo "Created default config in ${dir_rc%/}" && exit
-}
+  mkdir -p "$dir_rc" &>/dev/null
+  printf -- '# hibkey_1="foobar"\n'
+  printf -- '# hibkey_2="foobar"\n'
+  printf -- '# hibkey_3="foobar"\n'
+  printf -- '# hibkey_4="foobar"\n'
+  printf -- '# hibkey_5="foobar"\n'
+  printf -- '# hibkey_android1="foobar"\n'
+  printf -- '# hibkey_android2="foobar"\n'
+  printf -- '# hibkey_botanicula="foobar"\n'
+  printf -- '# hibkey_frozenbyte="foobar"\n'
+  printf -- '# hibkey_frozensynapse="foobar"\n'
+  printf -- '# hibkey_introversion="foobar"\n'
+  printf -- '# hibkey_mojang="foobar"\n'
+  printf -- '# hibkey_voxatron="foobar"\n'
+  printf -- '\n'
+  printf -- '# dir_hib="${HOME}/humbleindiebundle"\n'
+  printf -- '## set these to 1 to enable\n'
+  printf -- '## check md5sum of downloads\n'
+  printf -- 'check_md5=1\n'
+  printf -- '## spit out more detailed info, warnings, and errors\n'
+  printf -- 'verbose=0\n'
+} >"$rcfile"
 
 check_dir() {
-  ## pick a directory for config to live in
   [[ "$dir_rc" ]] || dir_rc="${HOME}/.config/humblepie"
-  rcfile="${dir_rc%/}/humblepie.rc"
+  rcfile="${dir_rc}/humblepie.rc"
   [[ -f "$rcfile" ]] && . "$rcfile"
-
+  if [[ ! -d "$dir_hib" ]]; then
+    broken "No download directory."
+    verbose "ERROR" "Specify a download directory in $rcfile," \
+      "or with -d <dir>."
+  fi
+  (( ret != 1 ))
   for dir in "${!dir_@}"; do
     case "$dir" in
       dir_hib)
-        [[ -d "${dir_hib%/}" && -w "${dir_hib%/}" ]] || {
+        dir_hib="${dir_hib%/}"
+        [[ -d "${dir_hib}" && -w "${dir_hib}" ]] || {
           dir_hib="${HOME}/humbleindiebundle"
           verbose "INFO:" "Using $dir_hib instead..."
           mkdir -p $dir_hib
         }
        ;;
       dir_hib_torrent)
-        [[ -d "${dir_hib_torrent%/}" && -w "${dir_hib_torrent%/}" ]] || {
+        dir_hib_torrent="${dir_hib_torrent%/}"
+        [[ -d "${dir_hib_torrent}" && -w "${dir_hib_torrent}" ]] || {
           dir_hib_torrent="${HOME}/humbleindiebundle/torrents"
           verbose "INFO:" "Using $dir_hib_torrent instead..."
           mkdir -p $dir_hib_torrent
         }
        ;;
-      # dir_install)
-      #   [[ -d "${dir_install%/}" && -w "${dir_install%/}" ]] || {
-      #   dir_install="${HOME}/humbleindiebundle/install"
-      #   verbose "INFO:" "Using $dir_install instead..."
-      #   mkdir -p $dir_install
-      # }
-      # ;;
     esac
   done
 }
@@ -131,23 +123,15 @@ check_dir() {
 ## kudos to Riviera on #bash for help with this one o/
 generate_list() {
   unset IFS links list link dl
-  local game pattern; declare -Ag links dest; declare -ag list
+  local game; declare -Ag links dest; declare -ag list
 
-  ## needs to start with http obviously, then...
-  ## ...strip out the ugly ubuntu link because lolcoupons...
-  ## ...and only use links with key= in them
-  # pattern='http!(*ubuntu*)key=*'
-  while read -r link; do
-    ## check the line, make sure it's a proper link, then add it to list
-    link="${link#* }"
-    ## seems to strip important links =[
-    [[ "$link" == *http*@(www|files)* ]] &&
+  while read -r _ link; do
+    # link="${link#* }"
+    [[ "$link" == http*@(www|files)* ]] &&
       list+=("$link")
-        ## read in the links dump
   done < <(links -html-numbered-links 1 -dump \
             "https://www.humblebundle.com/downloads?key=${hib_key}")
 
-  ## the list will not be populated if a bad key was specified
   if [[ -z "${list[@]}" ]]; then
     broken "Failed to find any valid downloads."
     verbose "ERROR:" "No downloads could be found." \
@@ -157,42 +141,52 @@ generate_list() {
   (( ret != 1 ))
 
   for dl in "${list[@]}"; do
-    [[ "$dl" == *files\.* ]] && {
+  if [[ "$dl" == *files\.* ]]; then
     file="${dl#*files*/}"
-    ## strip everything after '?key=' to get a filename
     file="${file%%\?*}"
     links["$file"]="$dl"
-    }
+  fi
   done
 }
 
 search_list() {
   unset dl slist slinks; declare -ag slist; declare -Ag slinks
-  ## loop through the keys of links array from generate_list
   for s in "${!links[@]}"; do
-    ## case-insensitive testing for a match and adding to a new array
     [[ "${s,,}" == +(*${search,,}*) ]] && slist+=("$s")
   done
 
-  ## make sure i got at least one result from the search
   if [[ -z "${slist[@]}" ]]; then
     broken "No files matched the search."
     verbose "ERROR:" "The search was unsuccessful." \
       "Please verify you specified a key or bundle and" \
       "spelled the search term correctly."
-    fi
+  fi
   (( ret != 1 ))
 
-  ## now build another array that is a subset of links, only matches to search
   for dl in "${slist[@]}"; do
     slinks["$dl"]="${links[$dl]}"
   done
 }
 
+user_list() {
+  unset downloads; declare -Ag dest; declare -ag downloads
+  PS3="Select files by number, continue with 0: "
+
+  select choice in "$@"; do
+    [[ "$choice" ]] || break
+    downloads+=("$choice")
+    dest[$choice]="${dir_hib}/${downloads[@]:(-1)}"
+  done
+  if [[ -z "${downloads[@]}" ]]; then
+    verbose "WARNING:" "No download specified."
+    exit
+  fi
+}
+
 auto_dl_game () {
 
   case "$1" in
-    single) ## array abuse so i can reuse the existing ones i built before
+    single) ## array abuse so i can reuse the existing ones
       downloads[0]="$hib_game"
       dest["$hib_game"]="${dir_hib}/$hib_game"
     ;;
@@ -204,81 +198,50 @@ auto_dl_game () {
     ;;
   esac
 
-  ## loop through the choices
   for fn in "${downloads[@]}"; do
-    ## make sure the game doesn't already exist
     if [[ -f "${dest[$fn]}" ]]; then
       verbose "WARNING:" "$fn already exists! Skipping..."
     else
-      ## then download it!
       verbose "INFO:" "Downloading $fn..."
       curl -# -o "${dest[$fn]}" "${links[$fn]}" &&
         verbose "INFO:" "Finished downloading ${fn}!"
     fi
   done
 
-  (( check_md5 != 0 )) || check_sum
-}
-
-user_list() {
-  unset downloads; declare -Ag dest; declare -ag downloads
-  ## select uses $PS3
-  PS3="Select files by number, continue with 0: "
-
-  select choice in "$@"; do
-    [[ "$choice" ]] || break
-    ## store each choice in an array
-    downloads+=("$choice")
-    ## now populate this associative array last using index of ${downloads[@]}
-    dest[$choice]="${dir_hib%/}/${downloads[@]:(-1)}"
-  done
-  if [[ -z "${downloads[@]}" ]]; then
-    verbose "WARNING:" "No download specified."
-    exit
-  fi
+  (( check_md5 == 0 )) || check_sum
 }
 
 check_sum() {
   unset md5 sums dl; local md5; declare -a sums
 
-  ## need to build the array of checksums from my big fat links array
   for dl in "${list[@]}"; do
-    [[ "$dl" == *downloads*#* ]] && {
+    if [[ "$dl" == *downloads*#* ]]; then
       cksum="${dl#*#}"
       [[ "$cksum" ]] && sums+=("$cksum")
-    }
+    fi
   done
 
   for file in "${downloads[@]}"; do
-    ## store the md5 hash
-    md5="$(md5sum <"${dir_hib%/}/$file")"
-    ## md5sum has a really irritating habit to print "cksum   filename"
-    ## strip everything from first space to end of var
+    md5="$(md5sum <"${dir_hib}/$file")"
     md5="${md5%% *}"
-    ## can't guarantee mixed case will ever match
-    ## capitalize everything, sums may be mixed case (i think)
-    ## potential to result in flawed success?
-    ## without case modification, potential for false negatives?
     for sum in "${sums[@]}"; do
       [[ "${md5^^}" == "${sum^^}" ]] && {
         success="1"
-        verbose "INFO:" "The md5 for ${dir_hib%/}/$file is okay!"
+        verbose "INFO:" "The md5 for ${dir_hib}/$file is okay!"
         break
       }
     done
     if (( success < 1 )); then
       broken "Checksums did not match."
-      verbose "WARNING:" "The md5 for ${dir_hib%/}/$file ($md5) did not check out!"
+      verbose "WARNING:" "The md5 for ${dir_hib}/$file ($md5) did not check out!"
     fi
   done
 }
 
 usage() {
-  printf "humblepie %s\n" "$version"
-  echo
-  printf "Configuration should be done with ~/.config/humblepie/humblepie.rc\n"
-  printf -- "Usage: %s [options]\n" "${0##*/}"
-  echo
+  printf "humblepie %s\n\n" "$version"
+  printf "Configuration file: ~/.config/humblepie/humblepie.rc\n"
+  printf -- "Usage: %s [options]\n\n" "${0##*/}"
   printf -- "Options:\n"
   printf -- " -b <name>   Choose the bundle specified in config\n"
   printf -- " -C <path>   Specify an alternate config file\n"
@@ -290,21 +253,15 @@ usage() {
   printf -- " -h          Print this help\n"
   printf -- " -r          Enable operation as root, for system-wide installations *NOT RECOMMENDED*\n"
   printf -- " -w          Write out a default config and exit\n"
-  printf -- " -v          Turn on verbose reporting for info, warnings, errors\n"
-  echo
-  printf -- "\tEXAMPLES:\n"
-  echo
-  printf -- "\tUsing hibkey_5, set download directory to ${HOME}/hib and search for \`psycho':\n"
-  printf -- "\t%s -b 5 -d ${HOME}/hib -s psycho\n" "${0##*/}"
-  echo
-  printf -- "\tUsing bundle key 0a1b2c3d, download amnesia_tdd-1.2.1-3.sh without prompting:\n"
-  printf -- "\t%s -k 0a1b2c3d -g amnesia_tdd-1.2.1-3.sh\n" "${0##*/}"
-  echo
+  printf -- " -v          Turn on verbose reporting for info, warnings, errors\n\n"
+  printf -- "     EXAMPLES:\n\n"
+  printf -- "     Using hibkey_5, set download directory to ${HOME}/hib and search for \`psycho':\n"
+  printf -- "     %s -b 5 -d ${HOME}/hib -s psycho\n\n" "${0##*/}"
+  printf -- "     Using bundle key 0a1b2c3d, download amnesia_tdd-1.2.1-3.sh without prompting:\n"
+  printf -- "     %s -k 0a1b2c3d -g amnesia_tdd-1.2.1-3.sh\n\n" "${0##*/}"
 }
-run() {
-    check_root
-    check_dir
 
+run() {
     OPTIND=1
     while getopts ":b:C:d:f:k:s:chrwv" opt; do
       case "$opt" in
@@ -319,6 +276,7 @@ run() {
         ;;
         w) ## write a config and exit
           write_default_rc
+          exit
         ;;
         r) ## turn on root, for systemwide installs
           asroot=1
@@ -330,7 +288,7 @@ run() {
         ;;
         d) ## set the download dir
           unset dir_hib
-          dir_hib="${OPTARG%/}"
+          dir_hib="${OPTARG}"
         ;;
         b) ## just pick the bundle with the rcfile
           unset hib_key
@@ -357,24 +315,12 @@ run() {
         v) ## enable verbosity
           verbose=1
         ;;
-        # i) ## not implemented
-        #   dir_install="${OPTARG}"
-        # ;;
-        # m) ## set download method; not implemented
-        #   case "${OPTARG}" in
-        #     t|torrent) dl_method="torrent"
-            # ;;
-        #     h|http) dl_method="http"
-            # ;;
-        #   esac
-        # ;;
-        # t) ## set the hib_torrent_dir; not implemented
-        #   hib_torrent_dir="${OPTARG}"
-        # ;;
       esac
     done
 
     messaging
+    check_root
+    check_dir
     generate_list
     [[ "$search" ]] && search_list
     auto_dl_game "$dl_arg"
