@@ -149,11 +149,12 @@ generate_list() {
             "https://www.humblebundle.com/downloads?key=${hib_key}")
 
   ## the list will not be populated if a bad key was specified
-  [[ "${list[@]}" ]] || broken "Failed to find any valid downloads." && {
+  if [[ -z "${list[@]}" ]]; then
+    broken "Failed to find any valid downloads."
     verbose "ERROR:" "No downloads could be found." \
       "Verify that a valid key was specified with -k," \
       "or properly configured in $rcfile."
-    }
+  fi
   (( ret == 1 )) && exit 1
 
   for dl in "${list[@]}"; do
@@ -175,13 +176,12 @@ search_list() {
   done
 
   ## make sure i got at least one result from the search
-  [[ "${slist[@]}" ]] || {
-    broken "No files matched the search." && {
-      verbose "ERROR:" "The search was unsuccessful." \
-        "Please verify you specified a key or bundle and" \
-        "spelled the search term correctly."
-    }
-  }
+  if [[ -z "${slist[@]}" ]]; then
+    broken "No files matched the search."
+    verbose "ERROR:" "The search was unsuccessful." \
+      "Please verify you specified a key or bundle and" \
+      "spelled the search term correctly."
+    fi
   (( ret == 1 )) && exit 1
 
   ## now build another array that is a subset of links, only matches to search
@@ -267,10 +267,10 @@ check_sum() {
         break
       }
     done
-    (( success < 1 )) && {
-      broken "Checksums did not match." &&
-       verbose "WARNING:" "The md5 for ${dir_hib%/}/$file ($md5) did not check out!"
-    }
+    if (( success < 1 )); then
+      broken "Checksums did not match."
+      verbose "WARNING:" "The md5 for ${dir_hib%/}/$file ($md5) did not check out!"
+    fi
   done
 }
 
