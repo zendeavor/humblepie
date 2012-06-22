@@ -138,7 +138,10 @@ generate_list() {
   local game; declare -Ag links dest; declare -ag list
 
   while read -r _ link; do
-        [[ "$link" == *@(www|files)* ]] && list+=("$link")
+    [[ "$link" == *@(www|files)* ]]
+    [[ "${excude[@]}" ]] && in_array "${link,,}" "${exclude[@],,}" "ex"
+    [[ "${search[@]}" ]] && in_array "${link,,}" "${search[@],,}"
+    list+=("$link")
   done < <(links -html-numbered-links 1 -dump \
             "https://www.humblebundle.com/downloads?key=${hib_key}")
 
@@ -151,43 +154,50 @@ generate_list() {
   (( ret != 1 ))
 
   for dl in "${list[@]}"; do
-    for ex in "${exclude[@],,}"; do
-      if [[ "${dl,,}" != +(*${ex})* ]]; then
-        if [[ "$dl" == *files\.* ]]; then
-          file="${dl#*files*/}"
-          file="${file%%\?*}"
-          links["$file"]="$dl"
-        fi
-      fi
-    done
+    if [[ "$dl" == *files\.* ]]; then
+      file="${dl#*files*/}"
+      file="${file%%\?*}"
+      links["$file"]="$dl"
+    fi
   done
 
 }
 
-search_list() {
-  unset dl slist slinks; declare -ag slist; declare -Ag slinks
-  for s in "${!links[@]}"; do
-    [[ "${s,,}" == +(*${search,,})* ]] && slist+=("$s")
-  done
-
-  if [[ -z "${slist[@]}" ]]; then
-    broken "No files matched the search."
-    verbose "ERROR:" "The search was unsuccessful." \
-      "Please verify you specified a key or bundle and" \
-      "spelled the search term correctly."
-  fi
-  (( ret != 1 ))
-
-  for dl in "${slist[@]}"; do
-    slinks["$dl"]="${links[$dl]}"
+in_array() {
+  local i
+  for i in "${@:2}"; do
+    if [[ "$3" ]]; then
+      [[ "$1" == "$i" ]] && return 1
+    else
+      [[ "$1" == "$i" ]] && return
+    fi
   done
 }
+
+# search_list() {
+#   unset dl slist slinks; declare -ag slist; declare -Ag slinks
+#   for s in "${!links[@]}"; do
+#     [[ "${s,,}" == +(*${search,,})* ]] && slist+=("$s")
+#   done
+
+#   if [[ -z "${slist[@]}" ]]; then
+#     broken "No files matched the search."
+#     verbose "ERROR:" "The search was unsuccessful." \
+#       "Please verify you specified a key or bundle and" \
+#       "spelled the search term correctly."
+#   fi
+#   (( ret != 1 ))
+
+#   for dl in "${slist[@]}"; do
+#     slinks["$dl"]="${links[$dl]}"
+#   done
+# }
 
 user_list() {
   unset downloads; declare -Ag dest; declare -ag downloads
   PS3="Select files by number, continue with 0: "
 
-  select choice in "$@"; do
+  select choice in "${!links[@]}"; do
     [[ "$choice" ]] || break
     downloads+=("$choice")
     dest[$choice]="${dir_hib}/${downloads[@]:(-1)}"
@@ -205,11 +215,8 @@ auto_dl_game () {
       downloads[0]="$hib_game"
       dest["$hib_game"]="${dir_hib}/$hib_game"
     ;;
-    search) ## only give the user the search results
-      user_list "${slist[@]}"
-    ;;
     *) ## present the entire list
-      user_list "${!links[@]}"
+      user_list
     ;;
   esac
 
