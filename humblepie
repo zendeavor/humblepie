@@ -64,40 +64,14 @@ check_root() {
   fi
 }
 
-write_default_rc () {
-  printf -- '# hibkey_1="foobar"\n'
-  printf -- '# hibkey_2="foobar"\n'
-  printf -- '# hibkey_3="foobar"\n'
-  printf -- '# hibkey_4="foobar"\n'
-  printf -- '# hibkey_5="foobar"\n'
-  printf -- '# hibkey_android1="foobar"\n'
-  printf -- '# hibkey_android2="foobar"\n'
-  printf -- '# hibkey_botanicula="foobar"\n'
-  printf -- '# hibkey_frozenbyte="foobar"\n'
-  printf -- '# hibkey_frozensynapse="foobar"\n'
-  printf -- '# hibkey_introversion="foobar"\n'
-  printf -- '# hibkey_mojang="foobar"\n'
-  printf -- '# hibkey_voxatron="foobar"\n'
-  printf -- '\n'
-  printf -- '# dir_hib="${HOME}/humbleindiebundle"\n'
-  printf -- '## set these to 1 to enable\n'
-  printf -- '## check md5sum of downloads\n'
-  printf -- 'check_md5=1\n'
-  printf -- '## spit out more detailed info, warnings, and errors\n'
-  printf -- 'verbose=0\n'
-} >"$rcfile"
-
 check_dir() {
-  messaging
   [[ "$dir_rc" ]] || dir_rc="${HOME}/.config/humblepie"
   dir_rc="${dir_rc%/}"
   rcfile="${dir_rc}/humblepie.rc"
   if [[ -f "$rcfile" ]]; then
     . "$rcfile"
   else
-    echo "No config found, writing..."
-    write_default_rc
-    exit 1
+    echo "No config found"
   fi
 
   if [[ "$dir_hib" && ! -d "$dir_hib" ]]; then
@@ -139,8 +113,7 @@ generate_list() {
   local game; declare -Ag links dest; declare -ag list
   
   for k in "${keys[@]}"; do
-    while read -r _ link < <(links -html-numbered-links 1 -dump \
-                  "https://www.humblebundle.com/downloads?key=$k"); do
+    while read -r _ link; do
       if [[ "$link" == *@(downloads.|files.)* ]]; then
         if [[ "${exclude[@]}" ]]; then
           [[ "${link,,}" == ${expatt,,} ]] && continue || true
@@ -150,22 +123,9 @@ generate_list() {
         fi
         list+=("$link")
       fi
-    done
+    done < <(links -html-numbered-links 1 -dump \
+                  "https://www.humblebundle.com/downloads?key=$k")
   done
-  echo "${list[@]}"
-  exit
-  # while read -r _ link; do
-  #   if [[ "$link" == *@(downloads.|files.)* ]]; then
-  #     if [[ "${exclude[@]}" ]]; then
-  #       [[ "${link,,}" == ${expatt,,} ]] && continue || true
-  #     fi
-  #     if [[ "${search[@]}" ]]; then
-  #       [[ "${link,,}" == ${spatt,,} ]] && true || continue
-  #     fi
-  #     list+=("$link")
-  #   fi
-  # done < <(links -html-numbered-links 1 -dump \
-  #           "https://www.humblebundle.com/downloads?key=${hib_key}")
 
   if [[ -z "${list[@]}" ]]; then
     broken "Failed to find any valid downloads."
@@ -278,7 +238,7 @@ usage() {
 
 run() {
     OPTIND=1
-    while getopts ":a:b:C:d:e:f:k:s:chrwv" opt; do
+    while getopts ":b:C:d:e:f:k:s:achrwv" opt; do
       case "$opt" in
         \?) ## usage, exit with error
           echo "Invalid option specified." >&2
@@ -320,7 +280,7 @@ run() {
         ;;
         k) ## specify a key manually
           unset hib_key
-          hib_key="$OPTARG"
+          IFS=, read -ra keys <<<"$OPTARG"
         ;;
         a) ## all bundles
           unset hib_key
@@ -340,7 +300,12 @@ run() {
           fi
         ;;
         e) ## exclusion from search
-          IFS=, read -ra exclude <<<"$OPTARG"
+          unset hib_game
+          if [[ "${exclude[@]}" ]]; then
+            exclude+=("$OPTARG")
+          else
+            IFS=, read -ra exclude <<<"$OPTARG"
+          fi
         ;;
         c) ## check_game should verify md5
           check_md5=1
@@ -350,7 +315,12 @@ run() {
 
     messaging
     check_root
-    check_dir
+    [[ "$rcfile" ]] || check_dir
+    if [[ "$hib_all" ]]; then
+      for k in "${!hibkey_@}"; do
+        keys+=("${!k}")
+      done
+    fi
     generate_list "$dl_arg"
     auto_dl_game
 }
