@@ -137,14 +137,29 @@ generate_list() {
   unset IFS links list link dl
   local game; declare -Ag links dest; declare -ag list
 
+  if [[ "${exclude[@]}" ]]; then
+    exclude_list() {
+      in_array "$1" "$2"
+    }
+  else
+    exclude_list() {
+      false
+    }
+  fi
+
+  if [[ "${search[@]}" ]]; then
+    search_list() {
+      in_array "$1" "$2"
+    }
+  else
+    search_list() {
+      :
+    }
+  fi
   while read -r _ link; do
-    if [[ "$link" == *@(www|files)* ]]; then
-      if [[ "${excude[@]}" ]]; then
-        in_array "${link,,}" "${exclude[@],,}"
-      fi
-      if [[ "${search[@]}" ]]; then
-        in_array "${link,,}" "${search[@],,}"
-      fi
+    if [[ "$link" == *@(www.|files.)* ]]; then
+      exclude_list "${link,,}" "${exclude[@],,}" && continue || true
+      search_list  "${link,,}" "${search[@],,}" || continue
       list+=("$link")
     fi
   done < <(links -html-numbered-links 1 -dump \
@@ -171,8 +186,9 @@ generate_list() {
 in_array() {
   local i
   for i in "${@:2}"; do
-    [[ "$1" == "$i" ]] && return 
+    [[ "$1" == *$i* ]] && return 0
   done
+  return 1
 }
 
 # search_list() {
