@@ -298,6 +298,8 @@ run() {
         ;;
         b) ## just pick the bundle with the rcfile
           unset hib_key
+          messaging
+          check_dir
           hib_key="hibkey_$OPTARG"
           hib_key="${!hib_key}"
         ;;
