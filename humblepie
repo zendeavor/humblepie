@@ -134,24 +134,45 @@ check_dir() {
 
 ## kudos to Riviera on #bash for help with this one o/
 generate_list() {
-  IFS='|'; local expatt="*+(${exclude[*]})*" spatt="*+(${search[*]})*"
+  IFS='|'; local expatt="*+(${exclude[@]})*" spatt="*+(${search[@]})*"
   unset IFS links list link dl
   local game; declare -Ag links dest; declare -ag list
-
-  while read -r _ link; do
-    if [[ "$link" == *@(downloads.|files.)* ]]; then
-      [[ "${link,,}" == ${expatt,,} ]] && continue || true
-      [[ "${link,,}" == ${spatt,,} ]] || continue
-      list+=("$link")
-    fi
-  done < <(links -html-numbered-links 1 -dump \
-            "https://www.humblebundle.com/downloads?key=${hib_key}")
+  
+  for k in "${keys[@]}"; do
+    while read -r _ link < <(links -html-numbered-links 1 -dump \
+                  "https://www.humblebundle.com/downloads?key=$k"); do
+      if [[ "$link" == *@(downloads.|files.)* ]]; then
+        if [[ "${exclude[@]}" ]]; then
+          [[ "${link,,}" == ${expatt,,} ]] && continue || true
+        fi
+        if [[ "${search[@]}" ]]; then
+          [[ "${link,,}" == ${spatt,,} ]] && true || continue
+        fi
+        list+=("$link")
+      fi
+    done
+  done
+  echo "${list[@]}"
+  exit
+  # while read -r _ link; do
+  #   if [[ "$link" == *@(downloads.|files.)* ]]; then
+  #     if [[ "${exclude[@]}" ]]; then
+  #       [[ "${link,,}" == ${expatt,,} ]] && continue || true
+  #     fi
+  #     if [[ "${search[@]}" ]]; then
+  #       [[ "${link,,}" == ${spatt,,} ]] && true || continue
+  #     fi
+  #     list+=("$link")
+  #   fi
+  # done < <(links -html-numbered-links 1 -dump \
+  #           "https://www.humblebundle.com/downloads?key=${hib_key}")
 
   if [[ -z "${list[@]}" ]]; then
     broken "Failed to find any valid downloads."
     verbose "ERROR:" "No downloads could be found." \
       "Verify that a valid key was specified with -k," \
-      "or properly configured in $rcfile."
+      "properly configured in $rcfile or," \
+      "that your search pattern was spelled correctly."
   fi
   (( ret != 1 ))
 
@@ -257,7 +278,7 @@ usage() {
 
 run() {
     OPTIND=1
-    while getopts ":b:C:d:e:f:k:s:chrwv" opt; do
+    while getopts ":a:b:C:d:e:f:k:s:chrwv" opt; do
       case "$opt" in
         \?) ## usage, exit with error
           echo "Invalid option specified." >&2
@@ -289,12 +310,21 @@ run() {
         b) ## just pick the bundle with the rcfile
           unset hib_key
           check_dir
-          hib_key="hibkey_$OPTARG"
-          hib_key="${!hib_key}"
+          IFS=, read -ra hibkeys <<<"$OPTARG"
+          for bundle in "${hibkeys[@]}"; do
+            bundles+=("hibkey_$bundle")
+          done
+          for k in "${bundles[@]}"; do
+             keys+=("${!k}")
+          done
         ;;
         k) ## specify a key manually
           unset hib_key
           hib_key="$OPTARG"
+        ;;
+        a) ## all bundles
+          unset hib_key
+          hib_all=1
         ;;
         f) ## pick a game to download
           unset dl_arg hib_game
@@ -303,10 +333,14 @@ run() {
         ;;
         s) ## case insensitive searching
           unset hib_game
-          search+=("$OPTARG")
+          if [[ "${search[@]}" ]]; then
+            search+=("$OPTARG")
+          else
+            IFS=, read -ra search <<<"$OPTARG"
+          fi
         ;;
         e) ## exclusion from search
-          exclude+=("$OPTARG")
+          IFS=, read -ra exclude <<<"$OPTARG"
         ;;
         c) ## check_game should verify md5
           check_md5=1
