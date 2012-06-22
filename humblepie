@@ -138,10 +138,15 @@ generate_list() {
   local game; declare -Ag links dest; declare -ag list
 
   while read -r _ link; do
-    [[ "$link" == *@(www|files)* ]]
-    [[ "${excude[@]}" ]] && in_array "${link,,}" "${exclude[@],,}" "ex"
-    [[ "${search[@]}" ]] && in_array "${link,,}" "${search[@],,}"
-    list+=("$link")
+    if [[ "$link" == *@(www|files)* ]]; then
+      if [[ "${excude[@]}" ]]; then
+        in_array "${link,,}" "${exclude[@],,}"
+      fi
+      if [[ "${search[@]}" ]]; then
+        in_array "${link,,}" "${search[@],,}"
+      fi
+      list+=("$link")
+    fi
   done < <(links -html-numbered-links 1 -dump \
             "https://www.humblebundle.com/downloads?key=${hib_key}")
 
@@ -166,11 +171,7 @@ generate_list() {
 in_array() {
   local i
   for i in "${@:2}"; do
-    if [[ "$3" ]]; then
-      [[ "$1" == "$i" ]] && return 1
-    else
-      [[ "$1" == "$i" ]] && return
-    fi
+    [[ "$1" == "$i" ]] && return 
   done
 }
 
