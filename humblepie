@@ -27,7 +27,8 @@
 ## comments starting with a single octothorpe are experimental code
 ## more than one octothorpe signifies detail or instructional comments
 
-
+## make bash do the exits for me
+set -e
 ## extglob is useful for matching with @()
 shopt -s extglob
 version="v0.4.1"
@@ -155,11 +156,7 @@ generate_list() {
       "Verify that a valid key was specified with -k," \
       "or properly configured in $rcfile."
   fi
-  if (( ret == 1 )); then
-    exit 1
-  else
-    true
-  fi
+  (( ret != 1 ))
 
   for dl in "${list[@]}"; do
     [[ "$dl" == *files\.* ]] && {
@@ -186,11 +183,7 @@ search_list() {
       "Please verify you specified a key or bundle and" \
       "spelled the search term correctly."
     fi
-  if (( ret == 1 )); then
-    exit 1
-  else
-    true
-  fi
+  (( ret != 1 ))
 
   ## now build another array that is a subset of links, only matches to search
   for dl in "${slist[@]}"; do
@@ -226,11 +219,8 @@ auto_dl_game () {
     fi
   done
 
-  if (( check_md5 > 0 )); then
-    check_sum
-  else
-    true
-  fi
+  (( check_md5 != 0 ))
+  check_sum
 }
 
 user_list() {
@@ -282,8 +272,6 @@ check_sum() {
     if (( success < 1 )); then
       broken "Checksums did not match."
       verbose "WARNING:" "The md5 for ${dir_hib%/}/$file ($md5) did not check out!"
-    else 
-      return
     fi
   done
 }
@@ -326,7 +314,7 @@ run() {
         \?) ## usage, exit with error
           echo "Invalid option specified." >&2
           usage
-          exit 1
+          return 1
         ;;
         h) ## print usage
           usage
@@ -396,6 +384,6 @@ run() {
 }
 
 if [[ -z "$@" ]]; then
-  usage && exit 1
+  usage && return 1
 fi
 run "$@"
