@@ -134,32 +134,14 @@ check_dir() {
 
 ## kudos to Riviera on #bash for help with this one o/
 generate_list() {
+  IFS='|'; local expatt="*+(${exclude[*]})*" spatt="*+(${search[*]})*"
   unset IFS links list link dl
   local game; declare -Ag links dest; declare -ag list
 
-  if [[ "${exclude[@]}" ]]; then
-    exclude_list() {
-      in_array "$1" "$2"
-    }
-  else
-    exclude_list() {
-      false
-    }
-  fi
-
-  if [[ "${search[@]}" ]]; then
-    search_list() {
-      in_array "$1" "$2"
-    }
-  else
-    search_list() {
-      :
-    }
-  fi
   while read -r _ link; do
-    if [[ "$link" == *@(www.|files.)* ]]; then
-      exclude_list "${link,,}" "${exclude[@],,}" && continue || true
-      search_list  "${link,,}" "${search[@],,}" || continue
+    if [[ "$link" == *@(downloads.|files.)* ]]; then
+      [[ "${link,,}" == ${expatt,,} ]] && continue || true
+      [[ "${link,,}" == ${spatt,,} ]] || continue
       list+=("$link")
     fi
   done < <(links -html-numbered-links 1 -dump \
@@ -174,7 +156,7 @@ generate_list() {
   (( ret != 1 ))
 
   for dl in "${list[@]}"; do
-    if [[ "$dl" == *files\.* ]]; then
+    if [[ "$dl" == *files* ]]; then
       file="${dl#*files*/}"
       file="${file%%\?*}"
       links["$file"]="$dl"
@@ -182,33 +164,6 @@ generate_list() {
   done
 
 }
-
-in_array() {
-  local i
-  for i in "${@:2}"; do
-    [[ "$1" == *$i* ]] && return 0
-  done
-  return 1
-}
-
-# search_list() {
-#   unset dl slist slinks; declare -ag slist; declare -Ag slinks
-#   for s in "${!links[@]}"; do
-#     [[ "${s,,}" == +(*${search,,})* ]] && slist+=("$s")
-#   done
-
-#   if [[ -z "${slist[@]}" ]]; then
-#     broken "No files matched the search."
-#     verbose "ERROR:" "The search was unsuccessful." \
-#       "Please verify you specified a key or bundle and" \
-#       "spelled the search term correctly."
-#   fi
-#   (( ret != 1 ))
-
-#   for dl in "${slist[@]}"; do
-#     slinks["$dl"]="${links[$dl]}"
-#   done
-# }
 
 user_list() {
   unset downloads; declare -Ag dest; declare -ag downloads
@@ -348,7 +303,6 @@ run() {
         ;;
         s) ## case insensitive searching
           unset hib_game
-          dl_arg="search"
           search+=("$OPTARG")
         ;;
         e) ## exclusion from search
@@ -363,9 +317,8 @@ run() {
     messaging
     check_root
     check_dir
-    generate_list
-    [[ "$search" ]] && search_list
-    auto_dl_game "$dl_arg"
+    generate_list "$dl_arg"
+    auto_dl_game
 }
 
 if [[ -z "$@" ]]; then
