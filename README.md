@@ -26,11 +26,14 @@ hibkey_introversion="foobar"
 hibkey_mojang="foobar"
 hibkey_voxatron="foobar"
 
+## Not recommended, but you may use this if you are lazy to imply -a (search all bundles)
+hib_all=0
+
 ## This is the download directory.
 dir_hib="${HOME}/humbleindiebundle"
 
 ## And you may turn these on with a value of 1, off with 0.
-## Setting them to 1 is the equivalent of using -cv when invoking humblepie.
+## Setting these to 1 is the equivalent of using -cv when invoking humblepie.
 check_md5=1
 verbose=0
 ```
@@ -42,19 +45,25 @@ humblepie [options]
 ##Options
 
 ```
+-a 
+    Searches all bundles that you have pre-configured a key for
+
 -b <name>
     Specify a bundle by name according to the config file; For example:
         hibkey_frozenbyte="0a1b2c3d" 
         humblepie -b frozenbyte
 
 -c 
-    Enable checking md5 hashes: DEFAULT=1
+    Enable checking md5 hashes
 
 -C <path>
     Specify an alternate config file
 
 -d <path>
     Specify a download directory. Overrides config option `hib_dir'.
+
+-e <term>
+    Specify exclusion patterns, case-insensitive
 
 -f <file>
     Specify a file to download without prompting; For example, to download Amnesia;
@@ -83,6 +92,28 @@ humblepie [options]
     Enable verbose reporting for info, warnings, and errors.
 ```
 
+##Example Usage
+
+Using hibkey_5, set download directory to /home/zendeavor/hib and search for `psycho':`
+```
+humblepie -b 5 -d /home/zendeavor/hib -s psycho
+```
+
+Using bundle key 0a1b2c3d, download amnesia_tdd-1.2.1-3.sh without prompting:
+```
+humblepie -k 0a1b2c3d -f amnesia_tdd-1.2.1-3.sh
+```
+
+##Searching
+
+Search and exclusion patterns are comma-delimited. Results will be filtered accordingly.          
+
+Multiple patterns when searching:                                                                 
+Bundles, keys, search and exlude patterns may all be specified as comma-delimited strings.Specifying any of these twice is accepted, provided you use a pipe ('|'). Due to the special meaning of the pipe symbol, backslash escaping or single-quoting is required.  
+```
+humblepie -b 3,4,botanicula -s super,runner -e mp3,flac -e 'rpm|deb|exe' -s dmg\|tar
+```
+
 ##Contact
 
 Email:  j.s.mcgee115@gmail.com
@@ -94,6 +125,8 @@ IRC:    irc.freenode.net/zendeavor
 Credit to [meskarune](admin@doloresportalatin.info) for writing this initial README. No one does it like her.
 
 Appreciation for Earnestly and gtmanfred for breaking this script often.
+
+Further kudos to vodik for managing to care about humblepie AND his exams at the same time. What a champ.
 
 ##Copyright
 

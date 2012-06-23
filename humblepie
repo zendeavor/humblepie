@@ -114,7 +114,7 @@ generate_list() {
   
   for k in "${keys[@]}"; do
     while read -r _ link; do
-      if [[ "$link" == *@(downloads.|files.)* ]]; then
+      if [[ "$link" == *@(downloads|files.)* ]]; then
         if [[ "${exclude[@]}" ]]; then
           [[ "${link,,}" == ${expatt,,} ]] && continue || true
         fi
@@ -190,7 +190,7 @@ check_sum() {
   unset md5 sums dl; local md5; declare -a sums
 
   for dl in "${list[@]}"; do
-    if [[ "$dl" == *downloads*#* ]]; then
+    if [[ "$dl" == *#* ]]; then
       cksum="${dl#*#}"
       [[ "$cksum" ]] && sums+=("$cksum")
     fi
@@ -221,19 +221,27 @@ usage() {
   printf -- " -b <name>   Choose the bundle specified in config\n"
   printf -- " -C <path>   Specify an alternate config file\n"
   printf -- " -d <dir>    Set the download directory\n"
+  printf -- " -e <term>   Case-insensitive patterns to exclude results\n"
   printf -- " -f <file>   Specify a file to download: must be full filename\n"
   printf -- " -k <key>    Specify a key manually: overrides -b\n"
-  printf -- " -s <term>   Case-insensitive search for files in bundle: requires -b or -k, overrides -g\n"
+  printf -- " -s <term>   Case-insensitive search for files in bundle\n"
+  printf -- " -a          Search all bundles with a configured key\n"
   printf -- " -c          Enable md5 checking\n"
   printf -- " -h          Print this help\n"
   printf -- " -r          Enable operation as root, for system-wide installations *NOT RECOMMENDED*\n"
-  printf -- " -w          Write out a default config and exit\n"
   printf -- " -v          Turn on verbose reporting for info, warnings, errors\n\n"
   printf -- "     EXAMPLES:\n\n"
   printf -- "     Using hibkey_5, set download directory to ${HOME}/hib and search for \`psycho':\n"
   printf -- "     %s -b 5 -d ${HOME}/hib -s psycho\n\n" "${0##*/}"
   printf -- "     Using bundle key 0a1b2c3d, download amnesia_tdd-1.2.1-3.sh without prompting:\n"
-  printf -- "     %s -k 0a1b2c3d -g amnesia_tdd-1.2.1-3.sh\n\n" "${0##*/}"
+  printf -- "     %s -k 0a1b2c3d -f amnesia_tdd-1.2.1-3.sh\n\n" "${0##*/}"
+  printf -- "     SEARCHING:\n"
+  printf -- "     Search and exclusion patterns are comma-delimited. Results will be filtered accordingly.\n\n"
+  printf -- "     Multiple patterns when searching:\n"
+  printf -- "     Bundles, keys, search and exlude patterns may all be specified as comma-delimited strings.\n"
+  printf -- "     Specifying any of these twice is accepted, provided you use a pipe ('|').\n"
+  printf -- "     Due to the special meaning of the pipe symbol, backslash escaping or single-quoting is required.\n\n"
+  printf -- "     %s -b 3,4,botanicula -s super,runner -e mp3,flac -e 'rpm|deb|exe' -s dmg\|tar\n" "${0##*/}"
 }
 
 run() {
@@ -268,7 +276,6 @@ run() {
           dir_hib="${OPTARG}"
         ;;
         b) ## just pick the bundle with the rcfile
-          unset hib_key
           check_dir
           IFS=, read -ra hibkeys <<<"$OPTARG"
           for bundle in "${hibkeys[@]}"; do
@@ -279,7 +286,6 @@ run() {
           done
         ;;
         k) ## specify a key manually
-          unset hib_key
           IFS=, read -ra keys <<<"$OPTARG"
         ;;
         a) ## all bundles
@@ -321,8 +327,8 @@ run() {
         keys+=("${!k}")
       done
     fi
-    generate_list "$dl_arg"
-    auto_dl_game
+    generate_list
+    auto_dl_game "$dl_arg"
 }
 
 if [[ -z "$@" ]]; then
