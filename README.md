@@ -85,9 +85,6 @@ humblepie [options]
         To search for all files containing the string `super' in your named bundle `hibkey_4':
         humblepie -b 4 -s super
 
--w
-    Write out a default config file and exit
-
 -v
     Enable verbose reporting for info, warnings, and errors.
 ```

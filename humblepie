@@ -246,7 +246,7 @@ usage() {
 
 run() {
     OPTIND=1
-    while getopts ":b:C:d:e:f:k:s:achrwv" opt; do
+    while getopts ":b:C:d:e:f:k:s:achrv" opt; do
       case "$opt" in
         \?) ## usage, exit with error
           echo "Invalid option specified." >&2
@@ -259,9 +259,6 @@ run() {
         ;;
         v) ## enable verbosity
           verbose=1
-        ;;
-        w) ## write a config and exit
-          check_dir
         ;;
         r) ## turn on root, for systemwide installs
           asroot=1
