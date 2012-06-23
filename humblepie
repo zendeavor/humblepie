@@ -4,23 +4,23 @@
 ### v0.4.3
 ### Copyright (c) 2012 Josh McGee
 ###
-### Permission is hereby granted, free of charge, to any person 
+### Permission is hereby granted, free of charge, to any person
 ### obtaining a copy of this software and associated documentation
-### files (the "Software"), to deal in the Software without 
+### files (the "Software"), to deal in the Software without
 ### restriction, including without limitation the rights to use, copy,
 ### modify, merge, publish, distribute, sublicense, and/or sell copies
 ### of the Software, and to permit persons to whom the Software is
 ### furnished to do so, subject to the following conditions:
 ###
-### The above copyright notice and this permission notice shall be 
+### The above copyright notice and this permission notice shall be
 ### included in all copies or substantial portions of the Software.
 ###
 ### THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-### EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
-### OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
+### EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+### OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
 ### NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
 ### BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-### ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
+### ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 ### CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ### SOFTWARE.
 ###
@@ -74,36 +74,18 @@ check_dir() {
     echo "No config found"
   fi
 
+  dir_hib="${dir_hib:-$PWD}"
   if [[ "$dir_hib" && ! -d "$dir_hib" ]]; then
     mkdir -p "$dir_hib"
-  elif [[ -z "$dir_hib" ]]; then
-    broken "No download directory."
+  fi
+
+  if [[ ! -d "${dir_hib}" && ! -w "${dir_hib}" ]]; then
+    broken "Destination invalid"
     verbose "ERROR" "Specify a download directory in $rcfile," \
       "or with -d <dir>."
   fi
 
   (( ret != 1 ))
-
-  for dir in "${!dir_@}"; do
-    case "$dir" in
-      dir_hib)
-        dir_hib="${dir_hib%/}"
-        [[ -d "${dir_hib}" && -w "${dir_hib}" ]] || {
-          dir_hib="${HOME}/humbleindiebundle"
-          verbose "INFO:" "Using $dir_hib instead..."
-          mkdir -p $dir_hib
-        }
-       ;;
-      dir_hib_torrent)
-        dir_hib_torrent="${dir_hib_torrent%/}"
-        [[ -d "${dir_hib_torrent}" && -w "${dir_hib_torrent}" ]] || {
-          dir_hib_torrent="${HOME}/humbleindiebundle/torrents"
-          verbose "INFO:" "Using $dir_hib_torrent instead..."
-          mkdir -p $dir_hib_torrent
-        }
-       ;;
-    esac
-  done
 }
 
 ## kudos to Riviera on #bash for help with this one o/
@@ -111,7 +93,7 @@ generate_list() {
   IFS='|'; local expatt="*+(${exclude[@]})*" spatt="*+(${search[@]})*"
   unset IFS links list link dl
   local game; declare -Ag links dest; declare -ag list
-  
+
   for k in "${keys[@]}"; do
     while read -r _ link; do
       if [[ "$link" == *@(downloads|files.)* ]]; then
