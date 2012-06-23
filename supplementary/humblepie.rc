@@ -14,7 +14,7 @@ hibkey_mojang="foobar"
 hibkey_voxatron="foobar"
 
 ## the download directory
-dir_hib="${HOME}/hib"
+dir_hib="${HOME}/.cache/hib"
 
 ## set these to 1 to enable, 0 to disable
 ## check md5sum of downloads

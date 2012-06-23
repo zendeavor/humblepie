@@ -89,7 +89,7 @@ check_dir() {
       dir_hib)
         dir_hib="${dir_hib%/}"
         [[ -d "${dir_hib}" && -w "${dir_hib}" ]] || {
-          dir_hib="${HOME}/humbleindiebundle"
+          dir_hib="${HOME}/.cache/hib"
           verbose "INFO:" "Using $dir_hib instead..."
           mkdir -p $dir_hib
         }
@@ -97,7 +97,7 @@ check_dir() {
       dir_hib_torrent)
         dir_hib_torrent="${dir_hib_torrent%/}"
         [[ -d "${dir_hib_torrent}" && -w "${dir_hib_torrent}" ]] || {
-          dir_hib_torrent="${HOME}/humbleindiebundle/torrents"
+          dir_hib_torrent="${HOME}/.cache/hib/torrents"
           verbose "INFO:" "Using $dir_hib_torrent instead..."
           mkdir -p $dir_hib_torrent
         }
