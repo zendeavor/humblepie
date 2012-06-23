@@ -77,7 +77,7 @@ check_dir() {
   dir_hib="${dir_hib:-$PWD}"
   [[ ! -d "$dir_hib" ]] && mkdir -p "$dir_hib"
 
-  if [[ ! -d "${dir_hib}" && ! -w "${dir_hib}" ]]; then
+  if [[ ! -w "${dir_hib}" ]]; then
     broken "Destination invalid"
     verbose "ERROR" "Specify a download directory in $rcfile," \
       "or with -d <dir>."
