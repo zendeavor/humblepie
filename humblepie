@@ -298,6 +298,7 @@ run() {
     check_root
     [[ "$rcfile" ]] || check_dir
     if [[ "$hib_all" ]]; then
+      unset keys
       for k in "${!hibkey_@}"; do
         keys+=("${!k}")
       done
