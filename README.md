@@ -94,7 +94,7 @@ humblepie [options]
 
 ##Example Usage
 
-Using hibkey_5, set download directory to /home/zendeavor/hib and search for `psycho':`
+Using hibkey_5, set download directory to /home/zendeavor/hib and search for 'psycho':`
 ```
 humblepie -b 5 -d /home/zendeavor/hib -s psycho
 ```

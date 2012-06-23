@@ -39,10 +39,7 @@ messaging() {
     verbose() {
       ## ERROR: return 1; else return 0
       printf "==> %s\n" "$1" "${@:2}"
-      if [[ "$1" == "ERROR:" ]]; then
-        ret="1"
-      else :
-      fi
+      [[ "$1" != "ERROR:" ]] || ret=1
     } >&2
     broken() { true; } &>/dev/null
   else
@@ -60,7 +57,7 @@ check_root() {
   if (( EUID != 0 )); then
     return
   else
-    verbose="1"
+    verbose=1
     messaging
     dir_rc="/etc/humblepie"
     (( asroot > 0 )) || verbose "ERROR" "Running as root requires -r!"
