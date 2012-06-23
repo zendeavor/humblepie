@@ -39,7 +39,10 @@ messaging() {
     verbose() {
       ## ERROR: return 1; else return 0
       printf "==> %s\n" "$1" "${@:2}"
-      [[ "$1" == "ERROR:" ]] && ret="1"
+      if [[ "$1" == "ERROR:" ]]; then
+        ret="1"
+      else :
+      fi
     } >&2
     broken() { true; } &>/dev/null
   else
