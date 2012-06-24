@@ -65,8 +65,8 @@ check_root() {
 }
 
 check_dir() {
-  [[ "$dir_rc" ]] || dir_rc="${HOME}/.config/humblepie"
-  dir_rc="${dir_rc%/}"
+  dir_rc="${XDG_CONFIG_DIR:-${HOME}/.config}"
+  dir_rc="${dir_rc%/}/humblepie"
   rcfile="${dir_rc}/humblepie.rc"
   if [[ -f "$rcfile" ]]; then
     . "$rcfile"
@@ -74,11 +74,12 @@ check_dir() {
     echo "No config found"
   fi
 
-  dir_hib="${dir_hib:-$PWD}"
+  dir_hib="${dir_hib:-${HOME}/.cache/hib}"
+  dir_hib="${dir_hib%/}"
   [[ ! -d "$dir_hib" ]] && mkdir -p "$dir_hib"
 
-  if [[ ! -w "${dir_hib}" ]]; then
-    broken "Destination invalid"
+  if [[ ! -w "$dir_hib" ]]; then
+    broken "Download destination invalid."
     verbose "ERROR" "Specify a download directory in $rcfile," \
       "or with -d <dir>."
   fi
@@ -93,10 +94,10 @@ generate_list() {
   for k in "${keys[@]}"; do
     while read -r _ link; do
       if [[ "$link" == *@(downloads|files.)* ]]; then
-        if [[ "${exclude[@]}" ]]; then
+        if [[ "${exclude[0]}" ]]; then
           [[ "${link,,}" == ${expatt,,} ]] && continue || true
         fi
-        if [[ "${search[@]}" ]]; then
+        if [[ "${search[0]}" ]]; then
           [[ "${link,,}" == ${spatt,,} ]] && true || continue
         fi
         list+=("$link")
@@ -105,7 +106,7 @@ generate_list() {
                   "https://www.humblebundle.com/downloads?key=$k")
   done
 
-  if [[ -z "${list[@]}" ]]; then
+  if [[ -z "${list[0]}" ]]; then
     broken "Failed to find any valid downloads."
     verbose "ERROR:" "No downloads could be found." \
       "Verify that a valid key was specified with -k," \
@@ -133,7 +134,7 @@ user_list() {
     downloads+=("$choice")
     dest[$choice]="${dir_hib}/${downloads[@]:(-1)}"
   done
-  if [[ -z "${downloads[@]}" ]]; then
+  if [[ -z "${downloads[0]}" ]]; then
     verbose "WARNING:" "No download specified."
     exit
   fi
@@ -248,7 +249,7 @@ run() {
         ;;
         d) ## set the download dir
           unset dir_hib
-          dir_hib="${OPTARG}"
+          dir_hib="$OPTARG"
         ;;
         b) ## just pick the bundle with the rcfile
           check_dir
@@ -274,7 +275,7 @@ run() {
         ;;
         s) ## case insensitive searching
           unset hib_game
-          if [[ "${search[@]}" ]]; then
+          if [[ "${search[0]}" ]]; then
             search+=("$OPTARG")
           else
             IFS=, read -ra search <<<"$OPTARG"
@@ -282,7 +283,7 @@ run() {
         ;;
         e) ## exclusion from search
           unset hib_game
-          if [[ "${exclude[@]}" ]]; then
+          if [[ "${exclude[0]}" ]]; then
             exclude+=("$OPTARG")
           else
             IFS=, read -ra exclude <<<"$OPTARG"
@@ -307,7 +308,7 @@ run() {
     auto_dl_game "$dl_arg"
 }
 
-if [[ -z "$@" ]]; then
+if [[ -z "$1" ]]; then
   usage && exit 1
 fi
 run "$@"
